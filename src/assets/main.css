@@ -10,3 +10,13 @@ body {
   --multistep-color-tab: #e5e7eb !important;
   --multistep-color-success: #eb36c5 !important;
 }
+
+/* FormKit overrides */
+#app .formkit-outer[data-type='multi-step'] > .formkit-wrapper {
+  @apply max-w-none;
+}
+
+#app .formkit-actions,
+#app .formkit-outer[data-type='multi-step'] .formkit-tab[data-valid='true'] .formkit-badge {
+  @apply hidden;
+}
