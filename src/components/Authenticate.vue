@@ -144,16 +144,3 @@
   });
   </script>
   
-  <style scoped>
-  .btn {
-    background-color: #1a73e8;
-    color: white;
-    padding: 10px 20px;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  .btn:hover {
-    background-color: #0f62da;
-  }
-  </style>
-  
