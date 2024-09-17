@@ -1,0 +1,328 @@
+<template>
+  <div class="mx-auto my-16 max-w-[768px]">
+    <img
+      src="/digitalhomes.svg"
+      alt="Digital Homes logo"
+      class="w-60 mx-auto mb-8"
+    />
+    <FormKit type="form" @submit="submit">
+      <FormKit type="multi-step" ref="multiStep" :allow-incomplete="false">
+        <!-- Step 1: Choose Photographer -->
+        <FormKit
+          type="step"
+          name="Choose Photographer"
+          title="Choose Photographer"
+        >
+          <FormKit
+            type="radio"
+            v-model="bookingData.selectedPhotographer"
+            label="Choose Photographer"
+            :options="photographerOptions"
+            :classes="{
+              outer: 'mb-8',
+              wrapper: 'py-2 px-4 w-full cursor-pointer',
+              option:
+                'flex text-black border-2 border-gray-200 rounded hover:border-gray-800',
+              decorator: 'hidden',
+              messages: 'mt-4',
+            }"
+            validation="required"
+            :validation-messages="{
+              required: 'Please choose a photographer to continue',
+            }"
+          >
+            <template #label="context">
+              <div class="flex items-center cursor-pointer">
+                <div class="text-gray-800 text-sm underline">
+                  {{ context.option.email }}
+                </div>
+              </div>
+            </template>
+          </FormKit>
+        </FormKit>
+
+        <!-- Step 2: Choose Time -->
+        <FormKit type="step" name="Choose Time" title="Choose Time">
+          <div v-if="loading" class="text-center py-8">
+            <div class="spinner"></div>
+            <!-- Loader while fetching -->
+            <p>Loading availability...</p>
+          </div>
+
+          <div v-else class="flex gap-8 mb-8">
+            <!-- Date Selection -->
+            <div class="w-1/2">
+              <div class="grid grid-cols-5 gap-1.5">
+                <div
+                  v-for="(slot, index) in dateSlots"
+                  :key="index"
+                  :class="[
+                    'border-2 border-gray-200 hover:border-gray-800 text-sm rounded p-2 text-center leading-none cursor-pointer',
+                    {
+                      'border-gray-800':
+                        selectedSlot && selectedSlot.date === slot.date,
+                    },
+                  ]"
+                  @click="selectDate(slot)"
+                >
+                  <div class="mb-2 text-gray-600">
+                    {{ moment(slot.date).format('ddd') }}
+                  </div>
+                  <div class="-mb-0.5 font-bold uppercase">
+                    {{ moment(slot.date).format('MMM') }}
+                  </div>
+                  <div class="text-lg font-bold">
+                    {{ moment(slot.date).format('DD') }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Time Selection -->
+            <div class="w-1/2">
+              <div v-if="selectedSlot" class="space-y-2">
+                <button
+                  v-for="timeSlot in selectedSlot.times"
+                  :key="timeSlot.time"
+                  :disabled="!timeSlot.available"
+                  :class="[
+                    'block w-full border rounded p-2',
+                    timeSlot.available
+                      ? 'border-2 border-gray-200 cursor-pointer'
+                      : 'border-2 border-gray-200 bg-gray-200 text-gray-500 cursor-not-allowed opacity-50',
+                    {
+                      'border-gray-800':
+                        bookingData.selectedTime === timeSlot.time,
+                    },
+                  ]"
+                  type="button"
+                  @click="timeSlot.available && selectTime(timeSlot)"
+                >
+                  {{ timeSlot.time }}
+                </button>
+              </div>
+              <div
+                v-else
+                class="h-full flex items-center justify-center text-sm opacity-50"
+              >
+                <p>Please select a date first.</p>
+              </div>
+            </div>
+          </div>
+          <!-- Next button should trigger form submission -->
+          <template #stepNext>
+            <FormKit type="submit" label="Submit" />
+          </template>
+        </FormKit>
+      </FormKit>
+    </FormKit>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, watch } from 'vue';
+import axios from 'axios';
+import moment from 'moment-timezone';
+
+const airtableBaseId = 'appnlATCpTLD0eA42';
+const airtableTableName = 'Calendar Data';
+const airtableToken =
+  'patqQ7CqYQ7x5cAFZ.78dd41590a05303b075c28b56ddd817e2d7470cb2825cd87e6f0b0bfff1e0e53';
+
+const airtableData = ref([]);
+const photographerOptions = ref([]);
+const bookingData = ref({
+  selectedPhotographer: null,
+  selectedTime: null,
+  selectedDate: null,
+});
+const selectedSlot = ref(null);
+const dateSlots = ref([]);
+const loading = ref(false);
+
+// Fetch Data from Airtable and create photographer options based on the Email column
+const fetchDataFromAirtable = async () => {
+  try {
+    const response = await axios.get(
+      `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`,
+      {
+        headers: {
+          Authorization: `Bearer ${airtableToken}`,
+        },
+      }
+    );
+    airtableData.value = response.data.records;
+
+    // Map the data to create photographer options using the Email field
+    const uniquePhotographers = new Set();
+    photographerOptions.value = airtableData.value
+      .filter((photographer) => {
+        const email = photographer.fields.Email;
+        const isDuplicate = uniquePhotographers.has(email);
+        uniquePhotographers.add(email);
+        return !isDuplicate;
+      })
+      .map((photographer) => ({
+        value: photographer.fields.Email,
+        email: photographer.fields.Email,
+      }));
+  } catch (error) {
+    console.error('Error fetching data from Airtable:', error);
+  }
+};
+
+onMounted(fetchDataFromAirtable);
+
+// Fetch Google Calendar events based on the selected photographer's email
+const fetchGoogleCalendarEvents = async (email) => {
+  if (!email) return;
+
+  console.log(`Fetching calendar events for: ${email}`);
+
+  // Show loader
+  loading.value = true;
+
+  // Get the access token from Airtable
+  const photographer = airtableData.value.find(
+    (item) => item.fields.Email === email
+  );
+
+  const accessToken = photographer.fields.AccessToken;
+
+  try {
+    // Fetch events from Google Calendar
+    const response = await axios.get(
+      `https://www.googleapis.com/calendar/v3/calendars/${email}/events`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    const events = response.data.items;
+    console.log('Events from Google Calendar:', events);
+
+    // Generate date slots and mark unavailable times
+    resetDateSlots();
+    dateSlots.value.forEach((slot) => {
+      slot.times.forEach((timeSlot) => {
+        events.forEach((event) => {
+          // Handle all-day events using the 'date' field
+          const eventStart = event.start.dateTime
+            ? moment(event.start.dateTime)
+            : moment(event.start.date, 'YYYY-MM-DD').startOf('day');
+          const eventEnd = event.end.dateTime
+            ? moment(event.end.dateTime)
+            : moment(event.end.date, 'YYYY-MM-DD').endOf('day');
+
+          const slotDateTime = convertToDateTime(slot.date, timeSlot.time);
+
+          // Block the timeslot if it falls within the event's start and end times
+          if (slotDateTime.isBetween(eventStart, eventEnd, 'minute', '[]')) {
+            timeSlot.available = false;
+          }
+        });
+      });
+    });
+
+    loading.value = false; // Hide loader
+  } catch (error) {
+    console.error('Error fetching events from Google Calendar:', error);
+    loading.value = false; // Hide loader on error
+  }
+};
+
+// Watch the selected photographer and fetch Google Calendar events on change
+watch(
+  () => bookingData.value.selectedPhotographer,
+  (newVal) => {
+    if (newVal) {
+      fetchGoogleCalendarEvents(newVal);
+    }
+  },
+  { immediate: true } // Ensures the first click triggers the API call
+);
+
+// Generate time slots for every 15 minutes from 9:00 AM to 5:00 PM
+const generateTimeSlots = () => {
+  const start = moment().hour(9).minute(0).second(0); // Start at 9 AM
+  const end = moment().hour(17).minute(0).second(0); // End at 5 PM
+  const times = [];
+
+  while (start.isBefore(end)) {
+    times.push({
+      time: start.format('hh:mm A'),
+      available: true,
+    });
+    start.add(15, 'minutes');
+  }
+  return times;
+};
+
+// Generate date and time slots
+const generateDateSlots = () => {
+  const dateSlots = [];
+  const now = moment().tz('America/Denver');
+
+  // Loop to generate slots for the next 10 days
+  for (let i = 0; i < 10; i++) {
+    const date = moment().tz('America/Denver').add(i, 'days');
+    const dateString = date.format('YYYY-MM-DD');
+
+    dateSlots.push({
+      date: dateString,
+      times: generateTimeSlots(), // Use the generated 15-minute intervals
+    });
+  }
+  return dateSlots;
+};
+
+// Reinitialize dateSlots
+const resetDateSlots = () => {
+  dateSlots.value = generateDateSlots();
+  bookingData.value.selectedTime = null; // Reset selected time
+  bookingData.value.selectedDate = null; // Reset selected date
+  selectedSlot.value = null; // Clear the selected slot
+};
+
+// Helper function to convert time to Date object using Moment.js
+const convertToDateTime = (dateStr, time) => {
+  return moment.tz(
+    `${dateStr} ${time}`,
+    'YYYY-MM-DD hh:mm A',
+    'America/Denver'
+  );
+};
+
+// Function to select a date slot
+const selectDate = (slot) => {
+  selectedSlot.value = slot;
+  bookingData.value.selectedDate = slot.date; // Save the selected date to bookingData
+};
+
+// Function to select a time slot
+const selectTime = (timeSlot) => {
+  bookingData.value.selectedTime = timeSlot.time;
+};
+</script>
+
+<style scoped>
+.spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-left-color: #1a73e8;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+</style>
