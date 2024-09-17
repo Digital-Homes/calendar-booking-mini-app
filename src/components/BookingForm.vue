@@ -34,7 +34,7 @@
             <template #label="context">
               <div class="flex items-center cursor-pointer">
                 <div class="text-gray-800 text-sm underline">
-                  {{ context.option.email }}
+                  {{ getOptionEmail(context.option) }}
                 </div>
               </div>
             </template>
@@ -132,15 +132,21 @@ type Photographer = {
   };
 };
 
+// Helper function to get email from context.option
+const getOptionEmail = (option: unknown): string => {
+  const typedOption = option as { email: string };
+  return typedOption.email || '';
+};
+
 const airtableBaseId = 'appnlATCpTLD0eA42';
 const airtableTableName = 'Calendar Data';
 const airtableToken =
   'patqQ7CqYQ7x5cAFZ.78dd41590a05303b075c28b56ddd817e2d7470cb2825cd87e6f0b0bfff1e0e53';
 
 const airtableData = ref<Photographer[]>([]);
-const photographerOptions = ref<{ value: string; email: string }[]>([]);
+const photographerOptions = ref<{ label: string; value: string }[]>([]);
 const bookingData = ref({
-  selectedPhotographer: null as string | null,
+  selectedPhotographer: undefined as string | undefined,
   selectedTime: null as string | null,
   selectedDate: null as string | null,
 });
@@ -171,8 +177,8 @@ const fetchDataFromAirtable = async () => {
         return !isDuplicate;
       })
       .map((photographer) => ({
+        label: photographer.fields.Email,
         value: photographer.fields.Email,
-        email: photographer.fields.Email,
       }));
   } catch (error) {
     console.error('Error fetching data from Airtable:', error);
@@ -316,6 +322,11 @@ const selectDate = (slot: { date: string; times: { time: string; available: bool
 // Function to select a time slot
 const selectTime = (timeSlot: { time: string }) => {
   bookingData.value.selectedTime = timeSlot.time;
+};
+
+// Dummy submit function to prevent build error
+const submit = () => {
+  console.log('Form submitted');
 };
 </script>
 
