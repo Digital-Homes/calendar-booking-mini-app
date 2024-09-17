@@ -124,20 +124,28 @@ import { ref, onMounted, watch } from 'vue';
 import axios from 'axios';
 import moment from 'moment-timezone';
 
+// Correct types for Airtable response and options
+type Photographer = {
+  fields: {
+    Email: string;
+    AccessToken: string;
+  };
+};
+
 const airtableBaseId = 'appnlATCpTLD0eA42';
 const airtableTableName = 'Calendar Data';
 const airtableToken =
   'patqQ7CqYQ7x5cAFZ.78dd41590a05303b075c28b56ddd817e2d7470cb2825cd87e6f0b0bfff1e0e53';
 
-const airtableData = ref([]);
-const photographerOptions = ref([]);
+const airtableData = ref<Photographer[]>([]);
+const photographerOptions = ref<{ value: string; email: string }[]>([]);
 const bookingData = ref({
-  selectedPhotographer: null,
-  selectedTime: null,
-  selectedDate: null,
+  selectedPhotographer: null as string | null,
+  selectedTime: null as string | null,
+  selectedDate: null as string | null,
 });
-const selectedSlot = ref(null);
-const dateSlots = ref([]);
+const selectedSlot = ref<null | { date: string; times: { time: string; available: boolean }[] }>(null);
+const dateSlots = ref<{ date: string; times: { time: string; available: boolean }[] }[]>([]);
 const loading = ref(false);
 
 // Fetch Data from Airtable and create photographer options based on the Email column
@@ -154,7 +162,7 @@ const fetchDataFromAirtable = async () => {
     airtableData.value = response.data.records;
 
     // Map the data to create photographer options using the Email field
-    const uniquePhotographers = new Set();
+    const uniquePhotographers = new Set<string>();
     photographerOptions.value = airtableData.value
       .filter((photographer) => {
         const email = photographer.fields.Email;
@@ -174,7 +182,7 @@ const fetchDataFromAirtable = async () => {
 onMounted(fetchDataFromAirtable);
 
 // Fetch Google Calendar events based on the selected photographer's email
-const fetchGoogleCalendarEvents = async (email) => {
+const fetchGoogleCalendarEvents = async (email: string) => {
   if (!email) return;
 
   console.log(`Fetching calendar events for: ${email}`);
@@ -186,6 +194,12 @@ const fetchGoogleCalendarEvents = async (email) => {
   const photographer = airtableData.value.find(
     (item) => item.fields.Email === email
   );
+
+  if (!photographer) {
+    console.error('Photographer not found');
+    loading.value = false;
+    return;
+  }
 
   const accessToken = photographer.fields.AccessToken;
 
@@ -207,8 +221,7 @@ const fetchGoogleCalendarEvents = async (email) => {
     resetDateSlots();
     dateSlots.value.forEach((slot) => {
       slot.times.forEach((timeSlot) => {
-        events.forEach((event) => {
-          // Handle all-day events using the 'date' field
+        events.forEach((event: { start: any; end: any }) => {
           const eventStart = event.start.dateTime
             ? moment(event.start.dateTime)
             : moment(event.start.date, 'YYYY-MM-DD').startOf('day');
@@ -248,7 +261,7 @@ watch(
 const generateTimeSlots = () => {
   const start = moment().hour(9).minute(0).second(0); // Start at 9 AM
   const end = moment().hour(17).minute(0).second(0); // End at 5 PM
-  const times = [];
+  const times: { time: string; available: boolean }[] = [];
 
   while (start.isBefore(end)) {
     times.push({
@@ -262,8 +275,7 @@ const generateTimeSlots = () => {
 
 // Generate date and time slots
 const generateDateSlots = () => {
-  const dateSlots = [];
-  const now = moment().tz('America/Denver');
+  const dateSlots: { date: string; times: { time: string; available: boolean }[] }[] = [];
 
   // Loop to generate slots for the next 10 days
   for (let i = 0; i < 10; i++) {
@@ -287,7 +299,7 @@ const resetDateSlots = () => {
 };
 
 // Helper function to convert time to Date object using Moment.js
-const convertToDateTime = (dateStr, time) => {
+const convertToDateTime = (dateStr: string, time: string) => {
   return moment.tz(
     `${dateStr} ${time}`,
     'YYYY-MM-DD hh:mm A',
@@ -296,13 +308,13 @@ const convertToDateTime = (dateStr, time) => {
 };
 
 // Function to select a date slot
-const selectDate = (slot) => {
+const selectDate = (slot: { date: string; times: { time: string; available: boolean }[] }) => {
   selectedSlot.value = slot;
   bookingData.value.selectedDate = slot.date; // Save the selected date to bookingData
 };
 
 // Function to select a time slot
-const selectTime = (timeSlot) => {
+const selectTime = (timeSlot: { time: string }) => {
   bookingData.value.selectedTime = timeSlot.time;
 };
 </script>

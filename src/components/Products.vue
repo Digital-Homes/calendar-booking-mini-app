@@ -79,10 +79,20 @@
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
 
-// Ref to store selected category, categories, Airtable data, and loading state
-const selectedCategory = ref('');
+type Product = {
+  id: string;
+  fields: {
+    Image?: { id: string; url: string }[];
+    Name: string;
+    Price?: number;
+    Description?: string;
+    Type?: string[];
+  };
+};
+
+const selectedCategory = ref<string>('');
 const categories = ref<string[]>([]); // Categories pulled from Airtable
-const airtableData = ref([]);
+const airtableData = ref<Product[]>([]);
 const isLoading = ref(false); // Loading state for products
 const stepCompleted = ref(false); // Track whether step 1 is completed
 const userInfo = ref({
@@ -90,13 +100,11 @@ const userInfo = ref({
   address: '',
 });
 
-// Airtable API setup
 const airtableBaseId = 'appVlfJAA3DuNMkAH';
 const airtableTableName = 'tbllibhVR3ACwhCL0';
 const airtableToken =
   'pat1IRjmIY2yqPy96.5835cd05ae22982911d4b1a520475cb1802a5907ec7c7ed173dd400441933817';
 
-// Fetch categories from Airtable
 const fetchCategoriesFromAirtable = async () => {
   try {
     const response = await axios.get(
@@ -108,7 +116,7 @@ const fetchCategoriesFromAirtable = async () => {
       }
     );
 
-    const records = response.data.records;
+    const records: Product[] = response.data.records;
     const typesSet = new Set<string>();
 
     records.forEach((record) => {
@@ -127,7 +135,7 @@ const fetchCategoriesFromAirtable = async () => {
 
 // Fetch data for selected category
 const fetchDataFromAirtable = async (category: string) => {
-  isLoading.value = true; // Show the loader while data is being fetched
+  isLoading.value = true;
   try {
     const response = await axios.get(
       `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`,
@@ -144,7 +152,7 @@ const fetchDataFromAirtable = async (category: string) => {
   } catch (error) {
     console.error('Error fetching data from Airtable:', error);
   } finally {
-    isLoading.value = false; // Hide the loader after the data is fetched
+    isLoading.value = false;
   }
 };
 
@@ -162,10 +170,9 @@ const goToStep2 = () => {
 // Go back to category selection
 const goBack = () => {
   selectedCategory.value = '';
-  airtableData.value = []; // Clear the products data when going back
+  airtableData.value = [];
 };
 
-// Fetch categories on component mount
 onMounted(() => {
   fetchCategoriesFromAirtable();
 });
