@@ -6,30 +6,6 @@
         alt="Digital Homes logo"
         class="w-60 mx-auto mb-8"
       />
-      <h2 class="mb-4 text-xl font-semibold">
-        {{ confirmationText }}
-      </h2>
-      <p class="mb-8 text-[#66708e]">
-        {{ confirmationSubText }}
-      </p>
-      <button
-        @click="redirectToApp"
-        class="py-3 px-9 bg-[#eb36c5] text-white rounded-full font-semibold"
-      >
-        {{ buttonText }}
-      </button>
-    </div>
-  </div>
-</template>
-
-<template>
-  <div class="h-screen flex items-center">
-    <div class="mx-auto text-center">
-      <img
-        src="/digitalhomes.svg"
-        alt="Digital Homes logo"
-        class="w-60 mx-auto mb-8"
-      />
       <h2 class="mb-4 text-xl font-semibold">{{ title }}</h2>
       <p class="mb-8 text-[#66708e]">{{ description }}</p>
       <button
