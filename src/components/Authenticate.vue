@@ -173,7 +173,7 @@ const storeTokensInAirtable = async (email, accessToken, refreshToken) => {
 // OAuth login flow function
 const connectGoogleCalendar = () => {
   console.log('connectGoogleCalendar called');
-  const oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/userinfo.email&access_type=offline&include_granted_scopes=true`;
+  const oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/userinfo.email&access_type=offline&include_granted_scopes=true&prompt=consent`;
   console.log('OAuth URL:', oauthUrl);
   window.location.href = oauthUrl;
 };
