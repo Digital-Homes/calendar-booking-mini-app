@@ -23,132 +23,163 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import axios from 'axios';
+  import { ref, onMounted } from 'vue';
+  import axios from 'axios';
 
-// Add your Google OAuth credentials here
-const clientId = import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID;
-const redirectUri = 'https://digital-homes-booking.netlify.app/authenticate'; // Ensure this matches Google Developer Console
-const accessToken = ref('');
-const refreshToken = ref('');
-const confirmationText = ref('Connect Your Google Calendar');
-const confirmationSubText = ref('Click the button below to authorize access to your Google Calendar.');
-const buttonText = ref('Connect');
+  // Add your Google OAuth credentials here
+  const clientId = import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID;
+  const redirectUri = 'https://digital-homes-booking.netlify.app/authenticate'; // Must match what's in Google Developer Console as an 'Authorized redirect URI'
+  const accessToken = ref('');
+  const refreshToken = ref('');
 
-// Function to update UI on successful OAuth process
-const updateSuccessUI = () => {
-  confirmationText.value = 'Google Calendar Connected!';
-  confirmationSubText.value = 'Your Google Calendar was successfully connected.';
-  buttonText.value = 'Go Back to App';
-};
+  console.log('Google OAuth Client ID:', clientId);
+  console.log('Redirect URI:', redirectUri);
 
-// Function to handle redirect to the main app
-const redirectToApp = () => {
-  if (confirmationText.value === 'Google Calendar Connected!') {
-    window.location.href = '/'; // Change this to the homepage or app URL
-  } else {
-    connectGoogleCalendar();
-  }
-};
+  // Function to extract tokens from the URL after Google redirects back
+  const extractTokenFromUrl = () => {
+    console.log('extractTokenFromUrl called');
+    const urlParams = new URLSearchParams(window.location.search);
+    const authorizationCode = urlParams.get('code');
+    console.log('Full URL Params:', window.location.href);
+    console.log('Authorization Code:', authorizationCode);
 
-// Function to extract tokens from the URL after Google redirects back
-const extractTokenFromUrl = () => {
-  const urlParams = new URLSearchParams(window.location.search);
-  const authorizationCode = urlParams.get('code');
+    if (authorizationCode) {
+      console.log('Authorization Code exists, calling exchangeCodeForTokens');
+      exchangeCodeForTokens(authorizationCode);
+    } else {
+      console.log('No Authorization Code found in URL');
+    }
+  };
 
-  if (authorizationCode) {
-    exchangeCodeForTokens(authorizationCode);
-  } else {
-    console.log('No Authorization Code found in URL');
-  }
-};
+  // Function to exchange the authorization code for access and refresh tokens
+  const exchangeCodeForTokens = async (authorizationCode) => {
+    console.log('exchangeCodeForTokens called with code:', authorizationCode);
 
-// Function to exchange the authorization code for access and refresh tokens
-const exchangeCodeForTokens = async (authorizationCode) => {
-  try {
-    const response = await axios.post('https://oauth2.googleapis.com/token', {
-      code: authorizationCode,
-      client_id: clientId,
-      client_secret: import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_SECRET,
-      redirect_uri: redirectUri,
-      grant_type: 'authorization_code',
+    try {
+      const response = await axios.post('https://oauth2.googleapis.com/token', {
+        code: authorizationCode,
+        client_id: clientId,
+        client_secret: import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_SECRET,
+        redirect_uri: redirectUri,
+        grant_type: 'authorization_code',
+      });
+
+      console.log('Response from Google Token Exchange:', response.data);
+
+      // Check if the tokens are present in the response
+      if (response.data.access_token) {
+        accessToken.value = response.data.access_token;
+        console.log('Access Token:', accessToken.value);
+      } else {
+        console.error('Access Token is missing from the response');
+      }
+
+      if (response.data.refresh_token) {
+        refreshToken.value = response.data.refresh_token;
+        console.log('Refresh Token:', refreshToken.value);
+      } else {
+        console.warn(
+          'Refresh Token is missing from the response. It might already have been issued before.'
+        );
+      }
+
+      // Proceed to fetch user's email only if we have an access token
+      if (accessToken.value) {
+        fetchUserEmail(accessToken.value);
+      } else {
+        console.error('No Access Token found, skipping email fetch.');
+      }
+    } catch (error) {
+      console.error('Error exchanging code for tokens:', error.response ? error.response.data : error.message);
+    }
+  };
+
+  // Function to fetch the user's email using the Google UserInfo API
+  const fetchUserEmail = async (accessTokenVal) => {
+    console.log('fetchUserEmail called with AccessToken:', accessTokenVal);
+
+    try {
+      const response = await axios.get(
+        'https://www.googleapis.com/oauth2/v1/userinfo?alt=json',
+        {
+          headers: {
+            Authorization: `Bearer ${accessTokenVal}`,
+          },
+        }
+      );
+
+      console.log('Response from Google UserInfo API:', response.data);
+
+      const userEmail = response.data.email;
+      console.log('User Email:', userEmail);
+
+      // Ensure the tokens are valid before storing them in Airtable
+      if (accessToken.value && refreshToken.value) {
+        console.log('Tokens are valid, storing in Airtable...');
+        // Call the function to store tokens in Airtable
+        storeTokensInAirtable(
+          userEmail, // The user's email
+          accessToken.value, // Access token
+          refreshToken.value // Refresh token
+        );
+      } else {
+        console.error('Tokens are missing or undefined');
+      }
+    } catch (error) {
+      console.error('Error fetching user email:', error);
+    }
+  };
+
+  // Function to store tokens and email in Airtable
+  const storeTokensInAirtable = async (email, accessToken, refreshToken) => {
+    console.log('storeTokensInAirtable called with:', {
+      email,
+      accessToken,
+      refreshToken,
     });
 
-    // Set the tokens
-    accessToken.value = response.data.access_token || '';
-    refreshToken.value = response.data.refresh_token || '';
+    const airtableBaseId = 'appnlATCpTLD0eA42';
+    const airtableTableName = 'Calendar Data';
+    const airtableToken =
+      'patqQ7CqYQ7x5cAFZ.78dd41590a05303b075c28b56ddd817e2d7470cb2825cd87e6f0b0bfff1e0e53';
 
-    // Fetch the user's email and store tokens in Airtable
-    fetchUserEmail(accessToken.value);
-  } catch (error) {
-    console.error('Error exchanging code for tokens:', error);
-  }
-};
+    console.log('Airtable base ID:', airtableBaseId);
+    console.log('Airtable table name:', airtableTableName);
 
-// Function to fetch the user's email using the Google UserInfo API
-const fetchUserEmail = async (accessTokenVal) => {
-  try {
-    const response = await axios.get(
-      'https://www.googleapis.com/oauth2/v1/userinfo?alt=json',
-      {
-        headers: {
-          Authorization: `Bearer ${accessTokenVal}`,
+    try {
+      const response = await axios.post(
+        `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`,
+        {
+          fields: {
+            Email: email,
+            AccessToken: accessToken, // Ensure tokens are sent
+            RefreshToken: refreshToken, // Ensure tokens are sent
+          },
         },
-      }
-    );
-
-    const userEmail = response.data.email;
-
-    if (accessToken.value && refreshToken.value) {
-      storeTokensInAirtable(userEmail, accessToken.value, refreshToken.value);
-    } else {
-      console.error('Tokens are missing or undefined');
+        {
+          headers: {
+            Authorization: `Bearer ${airtableToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      console.log('Tokens and email saved to Airtable:', response.data);
+    } catch (error) {
+      console.error('Error saving tokens to Airtable:', error);
     }
-  } catch (error) {
-    console.error('Error fetching user email:', error);
-  }
-};
+  };
 
-// Function to store tokens and email in Airtable
-const storeTokensInAirtable = async (email, accessToken, refreshToken) => {
-  const airtableBaseId = 'appnlATCpTLD0eA42';
-  const airtableTableName = 'Calendar Data';
-  const airtableToken =
-    'patqQ7CqYQ7x5cAFZ.78dd41590a05303b075c28b56ddd817e2d7470cb2825cd87e6f0b0bfff1e0e53';
+  // OAuth login flow function
+  const connectGoogleCalendar = () => {
+    console.log('connectGoogleCalendar called');
+    const oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/userinfo.email&access_type=offline&include_granted_scopes=true&prompt=consent`;
+    console.log('OAuth URL:', oauthUrl);
+    window.location.href = oauthUrl;
+  };
 
-  try {
-    await axios.post(
-      `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`,
-      {
-        fields: {
-          Email: email,
-          AccessToken: accessToken,
-          RefreshToken: refreshToken,
-        },
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${airtableToken}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    // After storing tokens, update the UI
-    updateSuccessUI();
-  } catch (error) {
-    console.error('Error saving tokens to Airtable:', error);
-  }
-};
-
-// OAuth login flow function
-const connectGoogleCalendar = () => {
-  const oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/userinfo.email&access_type=offline&include_granted_scopes=true`;
-  window.location.href = oauthUrl;
-};
-
-// Run when the component is mounted
-onMounted(() => {
-  extractTokenFromUrl();
-});
+  // Run when the component is mounted
+  onMounted(() => {
+    console.log('Component mounted, calling extractTokenFromUrl');
+    extractTokenFromUrl();
+  });
 </script>
