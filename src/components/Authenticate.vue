@@ -25,9 +25,8 @@
   import axios from 'axios';
   
   // Add your Google OAuth credentials here
-  const clientId =
-    '200822425571-mfp431gnt4emg4007g507pf139vig9ie.apps.googleusercontent.com';
-  const redirectUri = `${window.location.origin}/connect-google-calendar`;
+  const clientId = import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID;
+  const redirectUri = 'https://digital-homes-booking.netlify.app'; // Must match what's in Google Developer Console as an 'Authorized redirect URI'
   const accessToken = ref('');
   const refreshToken = ref('');
   
@@ -49,7 +48,7 @@
       const response = await axios.post('https://oauth2.googleapis.com/token', {
         code: authorizationCode,
         client_id: clientId,
-        client_secret: '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',
+        client_secret: import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_SECRET,
         redirect_uri: redirectUri,
         grant_type: 'authorization_code',
       });

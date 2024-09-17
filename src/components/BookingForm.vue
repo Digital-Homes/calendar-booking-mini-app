@@ -124,10 +124,9 @@ import { ref, onMounted, watch } from 'vue';
 import axios from 'axios';
 import moment from 'moment-timezone';
 
-const airtableBaseId = 'appnlATCpTLD0eA42';
-const airtableTableName = 'Calendar Data';
-const airtableToken =
-  'patqQ7CqYQ7x5cAFZ.78dd41590a05303b075c28b56ddd817e2d7470cb2825cd87e6f0b0bfff1e0e53';
+const airtableBaseId = import.meta.env.VITE_AIRTABLE_BASE_ID;
+const airtableTableName = import.meta.env.VITE_AIRTABLE_TABLE_NAME;
+const airtableToken = import.meta.env.VITE_AIRTABLE_TOKEN;
 
 const airtableData = ref([]);
 const photographerOptions = ref([]);

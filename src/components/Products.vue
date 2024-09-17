@@ -91,10 +91,9 @@ const userInfo = ref({
 });
 
 // Airtable API setup
-const airtableBaseId = 'appVlfJAA3DuNMkAH';
-const airtableTableName = 'tbllibhVR3ACwhCL0';
-const airtableToken =
-  'pat1IRjmIY2yqPy96.5835cd05ae22982911d4b1a520475cb1802a5907ec7c7ed173dd400441933817';
+const airtableBaseId = import.meta.env.VITE_AIRTABLE_BASE_ID;
+const airtableTableName = import.meta.env.VITE_AIRTABLE_TABLE_NAME;
+const airtableToken = import.meta.env.VITE_AIRTABLE_TOKEN;
 
 // Fetch categories from Airtable
 const fetchCategoriesFromAirtable = async () => {
