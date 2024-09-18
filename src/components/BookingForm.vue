@@ -251,23 +251,46 @@ const fetchGoogleCalendarEvents = async (email) => {
 };
 
 // Function to refresh the access token using the refresh token
+// Function to refresh the access token using the refresh token
 const refreshAccessToken = async (refreshToken) => {
-  const response = await axios.post(
-    'https://oauth2.googleapis.com/token',
-    new URLSearchParams({
-      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-      client_secret: import.meta.env.VITE_GOOGLE_CLIENT_SECRET,
-      refresh_token: refreshToken,
-      grant_type: 'refresh_token',
-    }),
-    {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-    }
-  );
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const clientSecret = import.meta.env.VITE_GOOGLE_CLIENT_SECRET;
 
-  return response.data.access_token;
+  // Log the clientId, clientSecret, and refreshToken for debugging
+  console.log('clientId:', clientId);
+  console.log('clientSecret:', clientSecret);
+  console.log('refreshToken:', refreshToken);
+
+  // Ensure clientId and clientSecret are defined
+  if (!clientId || !clientSecret) {
+    console.error('Missing Google OAuth client credentials');
+    throw new Error('Missing Google OAuth client credentials');
+  }
+
+  try {
+    const response = await axios.post(
+      'https://oauth2.googleapis.com/token',
+      new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: refreshToken,
+        grant_type: 'refresh_token',
+      }),
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      }
+    );
+
+    // Log the response data for debugging
+    console.log('New access token response:', response.data);
+
+    return response.data.access_token;
+  } catch (error) {
+    console.error('Error refreshing access token:', error);
+    throw error;
+  }
 };
 
 // Function to update the access token in Airtable
