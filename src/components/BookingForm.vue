@@ -251,7 +251,6 @@ const fetchGoogleCalendarEvents = async (email) => {
 };
 
 // Function to refresh the access token using the refresh token
-// Function to refresh the access token using the refresh token
 const refreshAccessToken = async (refreshToken) => {
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const clientSecret = import.meta.env.VITE_GOOGLE_CLIENT_SECRET;
