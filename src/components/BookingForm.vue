@@ -181,12 +181,13 @@ const fetchGoogleCalendarEvents = async (email) => {
   // Show loader
   loading.value = true;
 
-  // Get the access token from Airtable
+  // Get the access and refresh tokens from Airtable
   const photographer = airtableData.value.find(
     (item) => item.fields.Email === email
   );
 
   const accessToken = photographer.fields.AccessToken;
+  const refreshToken = photographer.fields.RefreshToken;
 
   try {
     // Fetch events from Google Calendar
@@ -207,23 +208,19 @@ const fetchGoogleCalendarEvents = async (email) => {
     dateSlots.value.forEach((slot) => {
       slot.times.forEach((timeSlot) => {
         events.forEach((event) => {
-          // Check if start and end exist and have either dateTime or date
-          if (event.start && event.end && (event.start.dateTime || event.start.date)) {
-            const eventStart = event.start.dateTime
-              ? moment(event.start.dateTime)
-              : moment(event.start.date, 'YYYY-MM-DD').startOf('day');
-            const eventEnd = event.end.dateTime
-              ? moment(event.end.dateTime)
-              : moment(event.end.date, 'YYYY-MM-DD').endOf('day');
+          // Handle all-day events using the 'date' field
+          const eventStart = event.start.dateTime
+            ? moment(event.start.dateTime)
+            : moment(event.start.date, 'YYYY-MM-DD').startOf('day');
+          const eventEnd = event.end.dateTime
+            ? moment(event.end.dateTime)
+            : moment(event.end.date, 'YYYY-MM-DD').endOf('day');
 
-            const slotDateTime = convertToDateTime(slot.date, timeSlot.time);
+          const slotDateTime = convertToDateTime(slot.date, timeSlot.time);
 
-            // Block the timeslot if it falls within the event's start and end times
-            if (slotDateTime.isBetween(eventStart, eventEnd, 'minute', '[]')) {
-              timeSlot.available = false;
-            }
-          } else {
-            console.warn(`Skipping event with incomplete start or end time: ${event}`);
+          // Block the timeslot if it falls within the event's start and end times
+          if (slotDateTime.isBetween(eventStart, eventEnd, 'minute', '[]')) {
+            timeSlot.available = false;
           }
         });
       });
@@ -232,8 +229,69 @@ const fetchGoogleCalendarEvents = async (email) => {
     loading.value = false; // Hide loader
   } catch (error) {
     console.error('Error fetching events from Google Calendar:', error);
+
+    // If error is 401, refresh the access token
+    if (error.response && error.response.status === 401) {
+      console.log('Access token expired, refreshing...');
+      try {
+        const newAccessToken = await refreshAccessToken(refreshToken);
+
+        // Update the access token in Airtable
+        await updateAccessTokenInAirtable(email, newAccessToken);
+
+        // Retry fetching events with the new access token
+        await fetchGoogleCalendarEvents(email);
+      } catch (refreshError) {
+        console.error('Error refreshing access token:', refreshError);
+      }
+    }
+
     loading.value = false; // Hide loader on error
   }
+};
+
+// Function to refresh the access token using the refresh token
+const refreshAccessToken = async (refreshToken) => {
+  const response = await axios.post(
+    'https://oauth2.googleapis.com/token',
+    new URLSearchParams({
+      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+      client_secret: import.meta.env.VITE_GOOGLE_CLIENT_SECRET,
+      refresh_token: refreshToken,
+      grant_type: 'refresh_token',
+    }),
+    {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    }
+  );
+
+  return response.data.access_token;
+};
+
+// Function to update the access token in Airtable
+const updateAccessTokenInAirtable = async (email, newAccessToken) => {
+  const photographer = airtableData.value.find(
+    (item) => item.fields.Email === email
+  );
+
+  const recordId = photographer.id; // Assuming this is the Airtable record ID
+
+  await axios.patch(
+    `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`,
+    {
+      fields: {
+        AccessToken: newAccessToken,
+      },
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${airtableToken}`,
+        'Content-Type': 'application/json',
+      },
+    }
+  );
 };
 
 // Watch the selected photographer and fetch Google Calendar events on change
