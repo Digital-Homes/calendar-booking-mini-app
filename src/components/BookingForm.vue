@@ -304,6 +304,54 @@ const selectDate = (slot) => {
 const selectTime = (timeSlot) => {
   bookingData.value.selectedTime = timeSlot.time;
 };
+
+// Submit the event to Google
+const submit = async () => {
+  // Ensure a photographer and time are selected
+  if (!bookingData.value.selectedPhotographer || !bookingData.value.selectedTime) {
+    alert('Please select a photographer and a time.');
+    return;
+  }
+
+  const photographer = airtableData.value.find(
+    (item) => item.fields.Email === bookingData.value.selectedPhotographer
+  );
+
+  const accessToken = photographer.fields.AccessToken;
+
+  const eventPayload = {
+    summary: 'Photography Session Booking',
+    description: `Your session with ${photographer.fields.Name}`,
+    start: {
+      dateTime: convertToDateTime(bookingData.value.selectedDate, bookingData.value.selectedTime).toISOString(),
+      timeZone: 'America/Denver',
+    },
+    end: {
+      dateTime: convertToDateTime(bookingData.value.selectedDate, bookingData.value.selectedTime)
+        .add(1, 'hours')
+        .toISOString(), // Assuming each session is 1 hour long
+      timeZone: 'America/Denver',
+    },
+  };
+
+  try {
+    const response = await axios.post(
+      `https://www.googleapis.com/calendar/v3/calendars/${bookingData.value.selectedPhotographer}/events`,
+      eventPayload,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    alert('Your booking has been added to the photographer\'s Google Calendar!');
+    console.log('Event created:', response.data);
+  } catch (error) {
+    console.error('Error creating event in Google Calendar:', error);
+    alert('Failed to create event in Google Calendar.');
+  }
+};
 </script>
 
 <style scoped>

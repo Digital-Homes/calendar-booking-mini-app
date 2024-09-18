@@ -73,7 +73,7 @@ const classes = {
    "group-data-[prefix-icon]:pl-5": true,
    "group-data-[suffix-icon]:pr-5": true,
    "border": true,
-   "border-pink-600": true,
+   "border-pink-500": true,
    "text-pink-600": true,
    "group-[]/repeater:shadow-none": true,
    "group-[]/multistep:shadow-none": true,
@@ -581,11 +581,12 @@ const classes = {
    "selection:bg-pink-100": true,
    "selection:text-neutral-700": true,
    "group-data-[has-overlay]:selection:!text-transparent": true,
-   "bg-pink-50": true,
-   "hover:bg-pink-100": true,
+   "bg-pink-500": true,
+   "text-white": true,
+   "hover:bg-pink-600": true,
    "dark:text-pink-500": true,
    "dark:bg-transparent": true,
-   "dark:hover:bg-pink-50/5": true
+   "dark:hover:bg-pink-400": true
  },
  "checkbox__decorator": {
    "rounded": true

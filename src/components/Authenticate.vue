@@ -7,7 +7,10 @@
         class="w-60 mx-auto mb-8"
       />
       <h2 class="mb-4 text-xl font-semibold">{{ title }}</h2>
-      <p class="mb-8 text-[#66708e]">{{ description }}</p>
+      <p class="mb-8 text-[#66708e]">
+        {{ description }}
+        <span v-if="codeFound">Redirecting in {{ countdown }}...</span>
+      </p>
       <button
         v-if="!codeFound"
         @click="connectGoogleCalendar"
@@ -41,6 +44,7 @@ const redirectUri = 'https://digital-homes-booking.netlify.app/authenticate'; //
 const accessToken = ref('');
 const refreshToken = ref('');
 const codeFound = ref(false);
+const countdown = ref(5); // Initialize countdown to 5 seconds
 
 console.log('Google OAuth Client ID:', clientId);
 console.log('Redirect URI:', redirectUri);
@@ -90,9 +94,24 @@ const exchangeCodeForTokens = async (authorizationCode) => {
     // Change the text after a successful exchange
     title.value = 'Google Calendar Connected';
     description.value = 'You have successfully connected your Google Calendar.';
+
+    // Start countdown and redirect after 5 seconds
+    startCountdown();
   } catch (error) {
     console.error('Error exchanging code for tokens:', error);
   }
+};
+
+// Function to start countdown timer
+const startCountdown = () => {
+  const countdownInterval = setInterval(() => {
+    if (countdown.value > 0) {
+      countdown.value -= 1;
+    } else {
+      clearInterval(countdownInterval);
+      goBackToApp(); // Redirect when countdown reaches 0
+    }
+  }, 1000); // Decrease countdown every second
 };
 
 // Function to fetch the user's email using the Google UserInfo API
