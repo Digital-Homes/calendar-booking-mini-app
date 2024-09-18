@@ -207,19 +207,23 @@ const fetchGoogleCalendarEvents = async (email) => {
     dateSlots.value.forEach((slot) => {
       slot.times.forEach((timeSlot) => {
         events.forEach((event) => {
-          // Handle all-day events using the 'date' field
-          const eventStart = event.start.dateTime
-            ? moment(event.start.dateTime)
-            : moment(event.start.date, 'YYYY-MM-DD').startOf('day');
-          const eventEnd = event.end.dateTime
-            ? moment(event.end.dateTime)
-            : moment(event.end.date, 'YYYY-MM-DD').endOf('day');
+          // Check if start and end exist and have either dateTime or date
+          if (event.start && event.end && (event.start.dateTime || event.start.date)) {
+            const eventStart = event.start.dateTime
+              ? moment(event.start.dateTime)
+              : moment(event.start.date, 'YYYY-MM-DD').startOf('day');
+            const eventEnd = event.end.dateTime
+              ? moment(event.end.dateTime)
+              : moment(event.end.date, 'YYYY-MM-DD').endOf('day');
 
-          const slotDateTime = convertToDateTime(slot.date, timeSlot.time);
+            const slotDateTime = convertToDateTime(slot.date, timeSlot.time);
 
-          // Block the timeslot if it falls within the event's start and end times
-          if (slotDateTime.isBetween(eventStart, eventEnd, 'minute', '[]')) {
-            timeSlot.available = false;
+            // Block the timeslot if it falls within the event's start and end times
+            if (slotDateTime.isBetween(eventStart, eventEnd, 'minute', '[]')) {
+              timeSlot.available = false;
+            }
+          } else {
+            console.warn(`Skipping event with incomplete start or end time: ${event}`);
           }
         });
       });
