@@ -208,19 +208,29 @@ const fetchGoogleCalendarEvents = async (email) => {
     dateSlots.value.forEach((slot) => {
       slot.times.forEach((timeSlot) => {
         events.forEach((event) => {
-          // Handle all-day events using the 'date' field
-          const eventStart = event.start.dateTime
-            ? moment(event.start.dateTime)
-            : moment(event.start.date, 'YYYY-MM-DD').startOf('day');
-          const eventEnd = event.end.dateTime
-            ? moment(event.end.dateTime)
-            : moment(event.end.date, 'YYYY-MM-DD').endOf('day');
+          // Check if start and end exist, and then handle all-day or dateTime events
+          if (event.start && event.end) {
+            const eventStart = event.start.dateTime
+              ? moment(event.start.dateTime)
+              : event.start.date
+              ? moment(event.start.date, 'YYYY-MM-DD').startOf('day')
+              : null;
 
-          const slotDateTime = convertToDateTime(slot.date, timeSlot.time);
+            const eventEnd = event.end.dateTime
+              ? moment(event.end.dateTime)
+              : event.end.date
+              ? moment(event.end.date, 'YYYY-MM-DD').endOf('day')
+              : null;
 
-          // Block the timeslot if it falls within the event's start and end times
-          if (slotDateTime.isBetween(eventStart, eventEnd, 'minute', '[]')) {
-            timeSlot.available = false;
+            // Only proceed if both eventStart and eventEnd are valid
+            if (eventStart && eventEnd) {
+              const slotDateTime = convertToDateTime(slot.date, timeSlot.time);
+
+              // Block the timeslot if it falls within the event's start and end times
+              if (slotDateTime.isBetween(eventStart, eventEnd, 'minute', '[]')) {
+                timeSlot.available = false;
+              }
+            }
           }
         });
       });
