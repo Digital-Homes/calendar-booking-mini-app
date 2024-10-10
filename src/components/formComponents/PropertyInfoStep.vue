@@ -58,6 +58,7 @@ const propertyInfo = ref({
 });
 
 const locationSuggestions = ref([]);
+const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
 
 const fetchLocationSuggestions = async () => {
   if (propertyInfo.value.location.length < 3) {
@@ -70,7 +71,7 @@ const fetchLocationSuggestions = async () => {
       {
         params: {
           input: propertyInfo.value.location,
-          key: "AIzaSyDSnsD51Y5HoEnPc93VDuPn6JBGQVs18Ms",
+          key: apiKey,
         },
       }
     );
