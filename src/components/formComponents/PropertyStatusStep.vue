@@ -28,7 +28,7 @@
         v-model="propertyStatus.commercialProperty"
         label="Commercial Property"
       />
-      <button type="submit">Next</button>
+      <FormKit type="submit" label="Next" />
     </form>
   </div>
 </template>
