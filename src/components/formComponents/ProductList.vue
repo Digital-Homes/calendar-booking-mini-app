@@ -42,27 +42,37 @@
             {{ record.fields.Description }}
           </p>
 
-          <!-- Display dropdown for variants if they exist -->
           <div v-if="record.fields.Variants && record.fields.Variants.length">
-            <label for="variantSelect">Choose a variant:</label>
-            <select
-              id="variantSelect"
-              class="variant-dropdown"
-              v-model="record.selectedVariant"
-            >
-              <option
-                v-for="variant in record.fields.Variants"
-                :key="variant.id"
-                :value="variant"
+            <template v-if="record.fields.Variants.length === 1">
+              <p>
+                Selected Variant: {{ record.fields.Variants[0].name }} - ${{
+                  record.fields.Variants[0].price
+                }}
+              </p>
+              <!-- No hidden input needed, directly using the single variant -->
+              <input type="hidden" v-model="record.selectedVariant" />
+            </template>
+            <template v-else>
+              <label for="variantSelect">Choose a variant:</label>
+              <select
+                id="variantSelect"
+                class="variant-dropdown"
+                v-model="record.selectedVariant"
               >
-                {{ variant.name }} - ${{ variant.price }}
-              </option>
-            </select>
+                <option
+                  v-for="variant in record.fields.Variants"
+                  :key="variant.id"
+                  :value="variant"
+                >
+                  {{ variant.name }} - ${{ variant.price }}
+                </option>
+              </select>
+            </template>
           </div>
+
           <FormKit
             type="button"
             label="Add to Cart"
-            :disabled="record.fields.Variants && !record.selectedVariant"
             @click="addToCart(record)"
             class="add-to-cart-button"
           />
@@ -188,7 +198,7 @@ const addToCart = (product) => {
   });
 
   notification.value = `${product.fields.Name} ${
-    selectedVariant ? `(${selectedVariant.name})` : ""
+    selectedVariant ? selectedVariant.name : ""
   } has been added to your cart!`;
 
   // Hide the notification after 5 seconds
@@ -239,13 +249,6 @@ fetchDataFromAirtable();
   border-radius: 5px; /* Rounded corners */
   cursor: pointer; /* Pointer cursor for hover */
   transition: background-color 0.3s; /* Smooth background transition */
-}
-
-.add-to-cart-button:disabled {
-  background-color: #b0d4ff; /* Faded color when disabled */
-  color: #6c757d; /* Change text color */
-  cursor: not-allowed; /* Change cursor to indicate disabled */
-  opacity: 0.65; /* Fade effect */
 }
 
 .add-to-cart-button:hover {

@@ -64,7 +64,7 @@ const fetchAddOns = async () => {
           Authorization: `Bearer ${airtableToken}`,
         },
         params: {
-          filterByFormula: `FIND(RECORD_ID(), "${addOnIds.join(",")}")`, // Adjust this formula based on your needs
+          filterByFormula: `FIND(RECORD_ID(), "${addOnIds.join(",")}")`,
         },
       }
     );
@@ -107,5 +107,52 @@ const selectAddOn = (id) => {
 .product-image {
   max-width: 100%;
   border-radius: 4px;
+}
+.variant-dropdown {
+  margin-top: 10px;
+  padding: 8px;
+  width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+}
+.add-to-cart-button {
+  /* Normal button styles */
+  background-color: #007bff; /* Example color */
+  color: white; /* Text color */
+  padding: 10px 15px; /* Padding */
+  border: none; /* No border */
+  border-radius: 5px; /* Rounded corners */
+  cursor: pointer; /* Pointer cursor for hover */
+  transition: background-color 0.3s; /* Smooth background transition */
+}
+
+.add-to-cart-button:disabled {
+  background-color: #b0d4ff; /* Faded color when disabled */
+  color: #6c757d; /* Change text color */
+  cursor: not-allowed; /* Change cursor to indicate disabled */
+  opacity: 0.65; /* Fade effect */
+}
+
+.add-to-cart-button:hover {
+  background-color: #0056b3;
+}
+
+.notification {
+  background-color: #4caf50; /* Green background */
+  color: white; /* White text */
+  padding: 10px;
+  margin-bottom: 15px;
+  text-align: center;
+  border-radius: 5px;
+}
+
+.cart-summary {
+  background-color: #f9f9f9;
+  padding: 10px;
+  margin-top: 15px;
+  text-align: left;
+  border: 1px solid #ddd;
+  border-radius: 5px;
 }
 </style>
