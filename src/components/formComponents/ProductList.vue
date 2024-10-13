@@ -12,10 +12,10 @@
       {{ notification }}
     </div>
 
-    <div v-if="cart.length > 0" class="cart-summary">
+    <!-- <div v-if="cart.length > 0" class="cart-summary">
       <p>Total items in cart: {{ totalItems }}</p>
       <p>Total price: ${{ totalPrice }}</p>
-    </div>
+    </div> -->
 
     <div v-if="!isLoading && airtableData.length">
       <div class="product-cards">
@@ -104,18 +104,6 @@ const notification = ref(null);
 
 const emit = defineEmits(["updateCart"]);
 
-const totalItems = computed(() => cart.value.length);
-const totalPrice = computed(() =>
-  cart.value.reduce((sum, product) => {
-    // Check if the product has a selected variant with a price
-    const price = product.selectedVariant
-      ? parseFloat(product.selectedVariant.price)
-      : parseFloat(product.fields.Price);
-
-    return !isNaN(price) ? sum + price : sum;
-  }, 0)
-);
-
 // Fetch data for selected category
 const fetchDataFromAirtable = async () => {
   isLoading.value = true; // Show the loader while data is being fetched
@@ -191,22 +179,35 @@ const fetchDataFromAirtable = async () => {
 
 const addToCart = (product) => {
   const selectedVariant = product.selectedVariant;
+  const existingProductIndex = cart.value.findIndex(
+    (item) =>
+      item.id === product.id &&
+      (!selectedVariant || item.selectedVariant?.id === selectedVariant.id)
+  );
 
-  cart.value.push({
-    ...product,
-    selectedVariant: selectedVariant || null,
-  });
+  if (existingProductIndex === -1) {
+    // Product or variant not in the cart, add it
+    cart.value.push({
+      ...product,
+      selectedVariant: selectedVariant || null,
+    });
 
-  notification.value = `${product.fields.Name} ${
-    selectedVariant ? selectedVariant.name : ""
-  } has been added to your cart!`;
+    notification.value = `${product.fields.Name} ${
+      selectedVariant ? selectedVariant.name : ""
+    } has been added to your cart!`;
+
+    // Emit the updated cart
+    emit("updateCart", cart.value);
+  } else {
+    notification.value = `${product.fields.Name} ${
+      selectedVariant ? selectedVariant.name : ""
+    } is already in your cart.`;
+  }
 
   // Hide the notification after 5 seconds
   setTimeout(() => {
     notification.value = null;
   }, 5000);
-
-  emit("updateCart", cart.value);
 };
 
 // Call fetch function when the component is mounted

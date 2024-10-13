@@ -11,7 +11,7 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import axios from "axios";
 
 // Set up the emit function for communicating with the parent component
@@ -41,6 +41,15 @@ const checkEmail = async () => {
       "There was an error checking your email. Please try again later.";
   }
 };
+
+onMounted(() => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const emailParam = urlParams.get("email");
+  if (emailParam) {
+    email.value = emailParam;
+    checkEmail(); // Call checkEmail to perform the email check in the background
+  }
+});
 </script>
 
 <style scoped>
