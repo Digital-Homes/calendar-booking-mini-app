@@ -1,5 +1,7 @@
 <template>
   <div>
+    <FormKit type="button" label="Back" @click="$emit('goBack')" />
+    <FormKit type="button" label="Next" @click="handleNextClick" />
     <h2>Select Add-Ons</h2>
     <div class="product-cards">
       <div v-for="addOn in addOns" :key="addOn.id" class="product-card">
@@ -28,7 +30,6 @@
         />
       </div>
     </div>
-    <FormKit type="button" label="Back" @click="$emit('goBack')" />
   </div>
 </template>
 
@@ -42,7 +43,7 @@ const addonsTable = import.meta.env.VITE_ADD_ONS_TABLE_ID;
 
 // Define props to accept selectedProducts
 const props = defineProps(["selectedProducts"]);
-const emit = defineEmits(["addToCart"]); // Define the emit for adding to the cart
+const emit = defineEmits(["addToCart", "next"]); // Define the emit for adding to the cart
 
 const addOns = ref([]); // Reactive reference for add-ons
 
@@ -86,6 +87,10 @@ const selectAddOn = (id) => {
   if (selectedAddOn) {
     emit("addToCart", selectedAddOn); // Emit the selected add-on to update the cart
   }
+};
+
+const handleNextClick = () => {
+  emit("next"); // Emit an event to proceed to the photographer selection step
 };
 </script>
 

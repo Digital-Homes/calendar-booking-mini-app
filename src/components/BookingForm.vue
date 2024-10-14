@@ -66,13 +66,13 @@
                   @click="selectDate(slot)"
                 >
                   <div class="mb-2 text-gray-600">
-                    {{ moment(slot.date).format('ddd') }}
+                    {{ moment(slot.date).format("ddd") }}
                   </div>
                   <div class="-mb-0.5 font-bold uppercase">
-                    {{ moment(slot.date).format('MMM') }}
+                    {{ moment(slot.date).format("MMM") }}
                   </div>
                   <div class="text-lg font-bold">
-                    {{ moment(slot.date).format('DD') }}
+                    {{ moment(slot.date).format("DD") }}
                   </div>
                 </div>
               </div>
@@ -120,12 +120,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
-import axios from 'axios';
-import moment from 'moment-timezone';
+import { ref, onMounted, watch } from "vue";
+import axios from "axios";
+import moment from "moment-timezone";
 
 const airtableBaseId = import.meta.env.VITE_AIRTABLE_BASE_ID;
-const airtableTableName = import.meta.env.VITE_AIRTABLE_TABLE_NAME;
+const photographerTable = import.meta.env.VITE_PHOTOGRAPHER_TABLE_ID;
 const airtableToken = import.meta.env.VITE_AIRTABLE_TOKEN;
 
 const airtableData = ref([]);
@@ -143,7 +143,7 @@ const loading = ref(false);
 const fetchDataFromAirtable = async () => {
   try {
     const response = await axios.get(
-      `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`,
+      `https://api.airtable.com/v0/${airtableBaseId}/${photographerTable}`,
       {
         headers: {
           Authorization: `Bearer ${airtableToken}`,
@@ -166,7 +166,7 @@ const fetchDataFromAirtable = async () => {
         email: photographer.fields.Email,
       }));
   } catch (error) {
-    console.error('Error fetching data from Airtable:', error);
+    console.error("Error fetching data from Airtable:", error);
   }
 };
 
@@ -201,7 +201,7 @@ const fetchGoogleCalendarEvents = async (email) => {
     );
 
     const events = response.data.items;
-    console.log('Events from Google Calendar:', events);
+    console.log("Events from Google Calendar:", events);
 
     // Generate date slots and mark unavailable times
     resetDateSlots();
@@ -213,13 +213,13 @@ const fetchGoogleCalendarEvents = async (email) => {
             const eventStart = event.start.dateTime
               ? moment(event.start.dateTime)
               : event.start.date
-              ? moment(event.start.date, 'YYYY-MM-DD').startOf('day')
+              ? moment(event.start.date, "YYYY-MM-DD").startOf("day")
               : null;
 
             const eventEnd = event.end.dateTime
               ? moment(event.end.dateTime)
               : event.end.date
-              ? moment(event.end.date, 'YYYY-MM-DD').endOf('day')
+              ? moment(event.end.date, "YYYY-MM-DD").endOf("day")
               : null;
 
             // Only proceed if both eventStart and eventEnd are valid
@@ -227,7 +227,9 @@ const fetchGoogleCalendarEvents = async (email) => {
               const slotDateTime = convertToDateTime(slot.date, timeSlot.time);
 
               // Block the timeslot if it falls within the event's start and end times
-              if (slotDateTime.isBetween(eventStart, eventEnd, 'minute', '[]')) {
+              if (
+                slotDateTime.isBetween(eventStart, eventEnd, "minute", "[]")
+              ) {
                 timeSlot.available = false;
               }
             }
@@ -238,11 +240,11 @@ const fetchGoogleCalendarEvents = async (email) => {
 
     loading.value = false; // Hide loader
   } catch (error) {
-    console.error('Error fetching events from Google Calendar:', error);
+    console.error("Error fetching events from Google Calendar:", error);
 
     // If error is 401, refresh the access token
     if (error.response && error.response.status === 401) {
-      console.log('Access token expired, refreshing...');
+      console.log("Access token expired, refreshing...");
       try {
         const newAccessToken = await refreshAccessToken(refreshToken);
 
@@ -252,7 +254,7 @@ const fetchGoogleCalendarEvents = async (email) => {
         // Retry fetching events with the new access token
         await fetchGoogleCalendarEvents(email);
       } catch (refreshError) {
-        console.error('Error refreshing access token:', refreshError);
+        console.error("Error refreshing access token:", refreshError);
       }
     }
 
@@ -266,38 +268,38 @@ const refreshAccessToken = async (refreshToken) => {
   const clientSecret = import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_SECRET;
 
   // Log the clientId, clientSecret, and refreshToken for debugging
-  console.log('clientId:', clientId);
-  console.log('clientSecret:', clientSecret);
-  console.log('refreshToken:', refreshToken);
+  console.log("clientId:", clientId);
+  console.log("clientSecret:", clientSecret);
+  console.log("refreshToken:", refreshToken);
 
   // Ensure clientId and clientSecret are defined
   if (!clientId || !clientSecret) {
-    console.error('Missing Google OAuth client credentials');
-    throw new Error('Missing Google OAuth client credentials');
+    console.error("Missing Google OAuth client credentials");
+    throw new Error("Missing Google OAuth client credentials");
   }
 
   try {
     const response = await axios.post(
-      'https://oauth2.googleapis.com/token',
+      "https://oauth2.googleapis.com/token",
       new URLSearchParams({
         client_id: clientId,
         client_secret: clientSecret,
         refresh_token: refreshToken,
-        grant_type: 'refresh_token',
+        grant_type: "refresh_token",
       }),
       {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          "Content-Type": "application/x-www-form-urlencoded",
         },
       }
     );
 
     // Log the response data for debugging
-    console.log('New access token response:', response.data);
+    console.log("New access token response:", response.data);
 
     return response.data.access_token;
   } catch (error) {
-    console.error('Error refreshing access token:', error);
+    console.error("Error refreshing access token:", error);
     throw error;
   }
 };
@@ -320,7 +322,7 @@ const updateAccessTokenInAirtable = async (email, newAccessToken) => {
     {
       headers: {
         Authorization: `Bearer ${airtableToken}`,
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     }
   );
@@ -345,10 +347,10 @@ const generateTimeSlots = () => {
 
   while (start.isBefore(end)) {
     times.push({
-      time: start.format('hh:mm A'),
+      time: start.format("hh:mm A"),
       available: true,
     });
-    start.add(15, 'minutes');
+    start.add(15, "minutes");
   }
   return times;
 };
@@ -356,12 +358,12 @@ const generateTimeSlots = () => {
 // Generate date and time slots
 const generateDateSlots = () => {
   const dateSlots = [];
-  const now = moment().tz('America/Denver');
+  const now = moment().tz("America/Denver");
 
   // Loop to generate slots for the next 10 days
   for (let i = 0; i < 10; i++) {
-    const date = moment().tz('America/Denver').add(i, 'days');
-    const dateString = date.format('YYYY-MM-DD');
+    const date = moment().tz("America/Denver").add(i, "days");
+    const dateString = date.format("YYYY-MM-DD");
 
     dateSlots.push({
       date: dateString,
@@ -383,8 +385,8 @@ const resetDateSlots = () => {
 const convertToDateTime = (dateStr, time) => {
   return moment.tz(
     `${dateStr} ${time}`,
-    'YYYY-MM-DD hh:mm A',
-    'America/Denver'
+    "YYYY-MM-DD hh:mm A",
+    "America/Denver"
   );
 };
 
@@ -402,8 +404,11 @@ const selectTime = (timeSlot) => {
 // Submit the event to Google
 const submit = async () => {
   // Ensure a photographer and time are selected
-  if (!bookingData.value.selectedPhotographer || !bookingData.value.selectedTime) {
-    alert('Please select a photographer and a time.');
+  if (
+    !bookingData.value.selectedPhotographer ||
+    !bookingData.value.selectedTime
+  ) {
+    alert("Please select a photographer and a time.");
     return;
   }
 
@@ -414,17 +419,23 @@ const submit = async () => {
   const accessToken = photographer.fields.AccessToken;
 
   const eventPayload = {
-    summary: 'Photography Session Booking',
+    summary: "Photography Session Booking",
     description: `Your session with ${photographer.fields.Name}`,
     start: {
-      dateTime: convertToDateTime(bookingData.value.selectedDate, bookingData.value.selectedTime).toISOString(),
-      timeZone: 'America/Denver',
+      dateTime: convertToDateTime(
+        bookingData.value.selectedDate,
+        bookingData.value.selectedTime
+      ).toISOString(),
+      timeZone: "America/Denver",
     },
     end: {
-      dateTime: convertToDateTime(bookingData.value.selectedDate, bookingData.value.selectedTime)
-        .add(1, 'hours')
+      dateTime: convertToDateTime(
+        bookingData.value.selectedDate,
+        bookingData.value.selectedTime
+      )
+        .add(1, "hours")
         .toISOString(), // Assuming each session is 1 hour long
-      timeZone: 'America/Denver',
+      timeZone: "America/Denver",
     },
   };
 
@@ -439,11 +450,11 @@ const submit = async () => {
       }
     );
 
-    alert('Your booking has been added to the photographer\'s Google Calendar!');
-    console.log('Event created:', response.data);
+    alert("Your booking has been added to the photographer's Google Calendar!");
+    console.log("Event created:", response.data);
   } catch (error) {
-    console.error('Error creating event in Google Calendar:', error);
-    alert('Failed to create event in Google Calendar.');
+    console.error("Error creating event in Google Calendar:", error);
+    alert("Failed to create event in Google Calendar.");
   }
 };
 </script>

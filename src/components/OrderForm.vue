@@ -13,13 +13,13 @@
     </div>
 
     <!-- Add this after your ProductList and AddOnSelection components -->
-    <button
-      v-if="showNextButton"
+    <FormKit
+      v-if="showNextButton && !addOnSelectionStep"
+      type="button"
+      label="Next"
       @click="handleNext"
       class="mt-4 bg-blue-500 text-white py-2 px-4 rounded"
-    >
-      Next
-    </button>
+    />
 
     <!-- Service selection step -->
     <FormSelectionStep
@@ -73,7 +73,8 @@
       v-if="
         propertyStatusSubmitted &&
         categorySelectionSubmitted &&
-        !addOnSelectionStep
+        !addOnSelectionStep &&
+        !showChoosePhotographerStep
       "
       :category="selectedCategory"
       :squareFootage="propertyInfo.squareFootage"
@@ -82,14 +83,16 @@
     />
 
     <AddOnSelection
-      v-if="addOnSelectionStep"
+      v-if="addOnSelectionStep && !showChoosePhotographerStep"
       @goBack="addOnSelectionStep = false"
+      @next="showChoosePhotographerStep = true"
       :selectedProducts="selectedProducts"
-      @addToCart="updateCart"
+      @addToCart="handleAddOnToCart"
     />
 
     <ChoosePhotographerStep
       v-if="showChoosePhotographerStep"
+      :selectedProducts="selectedProducts"
       @photographerSelected="handlePhotographerSelected"
     />
 
@@ -127,6 +130,7 @@ const cart = ref({
   items: [],
   totalPrice: 0,
 });
+const showChoosePhotographerStep = ref(false);
 
 const emit = defineEmits(["updateCart"]);
 
@@ -171,65 +175,22 @@ const handleNext = () => {
   if (hasAddOns.value) {
     addOnSelectionStep.value = true; // Show AddOnSelection if there are add-ons
   } else {
-    // Here you should set the state to show the "Choose Photographer" step
-    // For example:
-    // showChoosePhotographerStep.value = true;
     console.log("Proceeding to Choose Photographer Step");
+    // Add logic here to show the photographer selection step
+    showChoosePhotographerStep.value = true;
   }
 };
-
-// const handleEditingStyleSelected = (style) => {
-//   selectedEditingStyle.value = style;
-//   editingStyleSubmitted.value = true; // Mark step as completed after choosing editing style
-// };
 
 const totalPrice = computed(() => {
   return cart.value.totalPrice; // Calculate total price based on items in cart
 });
 const totalItems = computed(() => cart.value.items.length);
 
-// const updateCart = (addOn) => {
-//   // Check if the add-on is already in the cart
-//   const existingAddOn = cart.value.items.find((item) => item.id === addOn.id);
-
-//   if (!existingAddOn) {
-//     cart.value.items.push(addOn); // Add new add-on to the cart
-//   }
-
-//   cart.value.totalPrice += addOn.fields.Price; // Update total price
-// };
-
-const updateCart = (addOn) => {
-  // Check if the add-on is already in the cart
-  const existingAddOn = cart.value.items.find((item) => item.id === addOn.id);
-
-  if (!existingAddOn) {
-    cart.value.items.push(addOn); // Add new add-on to the cart
-  }
-
-  // Update the total price
-  cart.value.totalPrice += addOn.fields.Price;
-
-  emit("updateCart", cart.value.items); // Emit the updated cart
-
-  // Show the Next button if the cart has items
-  if (cart.value.items.length > 0) {
-    showNextButton.value = true;
-  }
-
-  // Log for debugging
-  console.log("Add-on added to cart:", addOn);
-  console.log("Current cart items after add-on:", cart.value.items);
-};
-
 const hasAddOns = computed(() => {
   const hasAddOnsValue = cart.value.items.some(
     (product) =>
       product.fields["Add-ons"] && product.fields["Add-ons"].length > 0
   );
-
-  // Log the current value of hasAddOns
-  console.log("Checking for add-ons:", hasAddOnsValue);
   return hasAddOnsValue;
 });
 
@@ -242,27 +203,32 @@ const handleCartUpdate = (updatedCartItems) => {
     return total + (!isNaN(price) ? price : 0);
   }, 0);
 
+  selectedProducts.value = updatedCartItems;
+
   // Check if the cart has add-ons after updating
   if (hasAddOns.value) {
     showNextButton.value = true;
     // addOnSelectionStep.value = true; // Show the AddOnSelection component if there are add-ons
   } else {
-    showNextButton.value = false; // Hide if there are no add-ons
+    showNextButton.value = true; // Hide if there are no add-ons
   }
+};
 
-  // Log the current cart items and total price
-  console.log("Updated cart items:", cart.value.items);
-  console.log("Updated total price:", cart.value.totalPrice);
+const handleAddOnToCart = (addOn) => {
+  // Add the selected add-on to the cart
+  cart.value.items.push(addOn);
+  cart.value.totalPrice += parseFloat(addOn.fields.Price); // Update the total price
+  showNextButton.value = true; // Show the next button if items are in the cart
+};
+
+const handlePhotographerSelected = () => {
+  console.log("Photographers");
 };
 
 watch(selectedProducts, (newVal) => {
   // Emit an updateCart event whenever the selected products change
   emit("updateCart", newVal);
 });
-
-const chooseAddOns = () => {
-  addOnSelectionStep.value = true; // Show the AddOnSelection component
-};
 </script>
 
 <style scoped>
