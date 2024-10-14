@@ -12,11 +12,6 @@
       {{ notification }}
     </div>
 
-    <!-- <div v-if="cart.length > 0" class="cart-summary">
-      <p>Total items in cart: {{ totalItems }}</p>
-      <p>Total price: ${{ totalPrice }}</p>
-    </div> -->
-
     <div v-if="!isLoading && airtableData.length">
       <div class="product-cards">
         <div
@@ -49,8 +44,6 @@
                   record.fields.Variants[0].price
                 }}
               </p>
-              <!-- No hidden input needed, directly using the single variant -->
-              <input type="hidden" v-model="record.selectedVariant" />
             </template>
             <template v-else>
               <label for="variantSelect">Choose a variant:</label>
@@ -94,7 +87,7 @@ const variantsTable = import.meta.env.VITE_VARIANTS_TABLE_ID;
 
 const props = defineProps({
   category: String,
-  squareFootage: Number, // Pass squareFootage as a prop
+  squareFootage: Number,
 });
 
 const airtableData = ref([]);
@@ -115,7 +108,7 @@ const fetchDataFromAirtable = async () => {
           Authorization: `Bearer ${airtableToken}`,
         },
         params: {
-          filterByFormula: `FIND('${props.category}', {Type})`, // Ensure proper Airtable formula syntax
+          filterByFormula: `FIND('${props.category}', {Type})`,
         },
       }
     );
@@ -165,6 +158,13 @@ const fetchDataFromAirtable = async () => {
                 : null;
             })
             .filter(Boolean);
+
+          if (record.fields.Variants.length === 1) {
+            record.selectedVariant = record.fields.Variants[0];
+          } else if (record.fields.Variants.length > 1) {
+            // Set the first variant as the default selected variant
+            record.selectedVariant = record.fields.Variants[0];
+          }
         }
 
         return record;
@@ -179,6 +179,9 @@ const fetchDataFromAirtable = async () => {
 
 const addToCart = (product) => {
   const selectedVariant = product.selectedVariant;
+
+  // Debugging logs to check the selected variant and product details
+
   const existingProductIndex = cart.value.findIndex(
     (item) =>
       item.id === product.id &&
@@ -196,7 +199,7 @@ const addToCart = (product) => {
       selectedVariant ? selectedVariant.name : ""
     } has been added to your cart!`;
 
-    // Emit the updated cart
+    // Emit the updated cart to the parent component
     emit("updateCart", cart.value);
   } else {
     notification.value = `${product.fields.Name} ${

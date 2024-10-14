@@ -237,7 +237,7 @@ const handleCartUpdate = (updatedCartItems) => {
   cart.value.items = updatedCartItems; // Set the new items from the updated cart
   cart.value.totalPrice = updatedCartItems.reduce((total, item) => {
     const price = item.selectedVariant
-      ? parseFloat(item.selectedVariant.Price)
+      ? parseFloat(item.selectedVariant.price)
       : parseFloat(item.fields.Price);
     return total + (!isNaN(price) ? price : 0);
   }, 0);
