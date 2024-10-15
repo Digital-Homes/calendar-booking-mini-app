@@ -42,32 +42,27 @@
             <div class="text-gray-800 text-lg">{{ context.option.label }}</div>
           </div>
         </template>
-        <div
-          v-if="
-            bookingData.availableSlots && bookingData.availableSlots.length > 0
-          "
-        >
+        <div>
           <h3>Available Time Slots</h3>
-          <ul>
-            <li
-              v-for="slot in bookingData.availableSlots"
-              :key="slot"
-              class="time-slot"
-            >
-              <button
-                class="slot-button"
-                @click="
-                  createBookingEvent(
-                    bookingData.selectedPhotographerAccessToken,
-                    'primary',
-                    slot
-                  )
-                "
+          <div
+            v-if="
+              bookingData.value.availableSlots &&
+              bookingData.value.availableSlots.length > 0
+            "
+          >
+            <ul>
+              <li
+                v-for="slot in bookingData.value.availableSlots"
+                :key="slot"
+                class="time-slot"
               >
                 {{ slot }}
-              </button>
-            </li>
-          </ul>
+              </li>
+            </ul>
+          </div>
+          <div v-else>
+            <p>No available time slots.</p>
+          </div>
         </div>
       </FormKit>
     </div>
@@ -77,11 +72,6 @@
 <script>
 import axios from "axios";
 import { ref, onMounted, computed } from "vue";
-
-const bookingData = ref({
-  selectedPhotographer: null,
-  availableSlots: [],
-});
 
 export default {
   props: {
@@ -93,6 +83,10 @@ export default {
   setup(props) {
     const photographers = ref([]);
     const loading = ref(true);
+    const bookingData = ref({
+      selectedPhotographer: null,
+      availableSlots: [],
+    });
 
     // Function to fetch photographers from Airtable
     const fetchPhotographers = async () => {
@@ -215,7 +209,6 @@ export default {
 
     // Function to handle photographer selection and fetch available slots for booking
     const handlePhotographerSelected = async (photographerEmail) => {
-      console.log(`hitting photographer selection ${photographerEmail}`);
       try {
         // Fetch the access token from the photographer's table in Airtable using the selected photographer's email
         const airtableBaseId = import.meta.env.VITE_AIRTABLE_BASE_ID;
@@ -248,12 +241,11 @@ export default {
 
         // Generate available slots based on busy times
         const availableSlots = generateAvailableTimeSlots(busyTimes);
-        console.log(`available slots: ${availableSlots}`);
 
         // Set the selected photographer and available slots in bookingData
-        bookingData.selectedPhotographer = photographerEmail;
-        bookingData.availableSlots = availableSlots;
-        console.log(bookingData);
+        bookingData.value.selectedPhotographer = photographerEmail;
+        bookingData.value.availableSlots = availableSlots;
+        console.log(bookingData.value.availableSlots.length);
       } catch (error) {
         console.error("Error fetching the photographer's access token:", error);
         alert(
