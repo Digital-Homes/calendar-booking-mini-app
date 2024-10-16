@@ -2,76 +2,104 @@
   <div>
     <div v-if="loading" class="spinner"></div>
     <div v-else>
-      <div v-if="filteredPhotographers.length === 0">
-        <p>No photographers available.</p>
-      </div>
-      <FormKit
-        type="radio"
-        v-model="bookingData.selectedPhotographer"
-        label="Choose Photographer"
-        :options="
-          filteredPhotographers.map((photographer) => ({
-            value: photographer.fields.Email,
-            label: photographer.fields['Display Name'],
-            profilePic:
-              photographer.fields['Profile Picture']?.[0]?.thumbnails?.small
-                ?.url,
-          }))
-        "
-        @input="handlePhotographerSelected"
-        :classes="{
-          outer: 'mb-8',
-          wrapper: 'flex flex-wrap',
-          option:
-            'flex items-center border-2 border-gray-200 rounded-lg p-4 m-2 cursor-pointer hover:border-gray-800',
-          decorator: 'hidden',
-          messages: 'mt-4',
-        }"
-        validation="required"
-        :validation-messages="{
-          required: 'Please choose a photographer to continue',
-        }"
-      >
-        <template #label="context">
-          <div class="flex items-center cursor-pointer">
-            <img
-              :src="context.option.profilePic"
-              alt="Photographer's profile picture"
-              class="w-12 h-12 rounded-full mr-4"
-            />
-            <div class="text-gray-800 text-lg">{{ context.option.label }}</div>
-          </div>
-        </template>
-        <div>
-          <h3>Available Time Slots</h3>
-          <div
-            v-if="
-              bookingData.value.availableSlots &&
-              bookingData.value.availableSlots.length > 0
-            "
-          >
-            <ul>
-              <li
-                v-for="slot in bookingData.value.availableSlots"
-                :key="slot"
-                class="time-slot"
-              >
-                {{ slot }}
-              </li>
-            </ul>
-          </div>
-          <div v-else>
-            <p>No available time slots.</p>
-          </div>
+      <!-- Step 1: Choose Photographer -->
+      <div v-if="!bookingData.selectedPhotographer">
+        <div v-if="filteredPhotographers.length === 0">
+          <p>No photographers available.</p>
         </div>
-      </FormKit>
+        <FormKit
+          v-else
+          type="radio"
+          v-model="bookingData.selectedPhotographer"
+          label="Choose Photographer"
+          :options="
+            filteredPhotographers.map((photographer) => ({
+              value: photographer.fields.Email,
+              label: photographer.fields['Display Name'],
+              profilePic:
+                photographer.fields['Profile Picture']?.[0]?.thumbnails?.small
+                  ?.url,
+            }))
+          "
+          @input="handlePhotographerSelected"
+          :classes="{
+            outer: 'mb-8',
+            wrapper: 'flex flex-wrap',
+            option:
+              'flex items-center border-2 border-gray-200 rounded-lg p-4 m-2 cursor-pointer hover:border-gray-800',
+            decorator: 'hidden',
+            messages: 'mt-4',
+          }"
+          validation="required"
+          :validation-messages="{
+            required: 'Please choose a photographer to continue',
+          }"
+        >
+          <template #label="context">
+            <div class="flex items-center cursor-pointer">
+              <img
+                :src="context.option.profilePic"
+                alt="Photographer's profile picture"
+                class="w-12 h-12 rounded-full mr-4"
+              />
+              <div class="text-gray-800 text-lg">
+                {{ context.option.label }}
+              </div>
+            </div>
+          </template>
+        </FormKit>
+      </div>
+
+      <!-- Step 2: Display Selected Photographer and Available Time Slots -->
+      <div v-if="bookingData.selectedPhotographer">
+        <h3>Selected Photographer: {{ bookingData.selectedPhotographer }}</h3>
+        <h4>Select a Date</h4>
+        <select
+          v-model="bookingData.selectedDate"
+          @change="selectDate(bookingData.selectedDate)"
+        >
+          <option
+            v-for="(slots, date) in bookingData.availableSlots"
+            :key="date"
+            :value="date"
+          >
+            {{ date }}
+          </option>
+        </select>
+
+        <div v-if="isGeneratingSlots">
+          <p>Loading available time slots...</p>
+        </div>
+
+        <div
+          v-else-if="slotsForSelectedDate && slotsForSelectedDate.length > 0"
+        >
+          <h4>Available Start Times</h4>
+          <ul class="flex flex-wrap justify-center space-x-4">
+            <li
+              v-for="slot in slotsForSelectedDate"
+              :key="slot"
+              class="time-slot flex-1 p-4 border-2 rounded-lg text-center bg-white shadow-md hover:shadow-lg transition"
+              @click="selectTimeSlot(bookingData.selectedDate, slot)"
+            >
+              {{ slot }}
+            </li>
+          </ul>
+        </div>
+
+        <div
+          v-else-if="bookingData.selectDate && slotsForSelectedDate.length == 0"
+        >
+          <p>No available time slots for this date.</p>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
 import axios from "axios";
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, reactive } from "vue";
 
 export default {
   props: {
@@ -79,14 +107,37 @@ export default {
       type: Array,
       required: true,
     },
+    duration: {
+      type: Number,
+    },
   },
   setup(props) {
     const photographers = ref([]);
     const loading = ref(true);
-    const bookingData = ref({
+    const bookingData = reactive({
       selectedPhotographer: null,
       availableSlots: [],
+      selectedDate: null,
+      selectedSlot: {},
     });
+    const step = ref(1); // For tracking the current step
+    const nextStep = () => {
+      step.value += 1;
+    };
+    const previousStep = () => {
+      step.value = Math.max(1, step.value - 1);
+    };
+    const isGeneratingSlots = ref(false);
+
+    const selectTimeSlot = (date, slot) => {
+      bookingData.selectedSlot = { date, time: slot }; // Store the date and time as an object
+      console.log(bookingData.selectedSlot);
+      nextStep();
+    };
+
+    const selectDate = (date) => {
+      bookingData.selectedDate = date; // Update to use bookingData
+    };
 
     // Function to fetch photographers from Airtable
     const fetchPhotographers = async () => {
@@ -146,7 +197,7 @@ export default {
           {
             timeMin: new Date().toISOString(),
             timeMax: new Date(
-              new Date().setDate(new Date().getDate() + 7)
+              new Date().setDate(new Date().getDate() + 14)
             ).toISOString(), // Check availability for the next 7 days
             items: [{ id: calendarId }],
           },
@@ -164,47 +215,107 @@ export default {
       }
     };
 
-    // Function to generate 30-minute slots based on the calendar's busy times
+    // Function to generate time slots based on the calendar's busy times and dynamic duration
     const generateAvailableTimeSlots = (
       busyTimes,
+      slotDuration = 30, // Slot duration in minutes (default to 30 if not provided)
       startTime = "09:00",
       endTime = "17:00"
     ) => {
-      const slots = [];
+      const slots = {};
       const currentDate = new Date();
-      currentDate.setHours(parseInt(startTime.split(":")[0]));
-      currentDate.setMinutes(parseInt(startTime.split(":")[1]));
+      // isGeneratingSlots.value = true;
 
-      const endDate = new Date();
-      endDate.setHours(parseInt(endTime.split(":")[0]));
-      endDate.setMinutes(parseInt(endTime.split(":")[1]));
+      // Loop for the next 14 days
+      for (let i = 0; i < 14; i++) {
+        const dateKey = new Date(currentDate);
+        dateKey.setDate(currentDate.getDate() + i);
+        const dateString = dateKey.toLocaleDateString(); // Format the date as needed
 
-      while (currentDate < endDate) {
-        const slotStart = new Date(currentDate);
-        const slotEnd = new Date(currentDate);
-        slotEnd.setMinutes(slotEnd.getMinutes() + 30);
+        // Create an array for the available slots for this specific date
+        slots[dateString] = [];
 
-        const isSlotAvailable = busyTimes.every(
-          (busy) =>
-            new Date(busy.start) >= slotEnd || new Date(busy.end) <= slotStart
-        );
+        const slotStart = new Date(dateKey);
+        slotStart.setHours(parseInt(startTime.split(":")[0]));
+        slotStart.setMinutes(parseInt(startTime.split(":")[1]));
 
-        if (isSlotAvailable) {
-          slots.push(
-            `${slotStart.toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })} - ${slotEnd.toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}`
+        const slotEnd = new Date(dateKey);
+        slotEnd.setHours(parseInt(endTime.split(":")[0]));
+        slotEnd.setMinutes(parseInt(endTime.split(":")[1]));
+
+        while (slotStart < slotEnd) {
+          const currentSlotStart = new Date(slotStart);
+          const currentSlotEnd = new Date(slotStart);
+          currentSlotEnd.setMinutes(currentSlotEnd.getMinutes() + slotDuration);
+
+          const isSlotAvailable = busyTimes.every(
+            (busy) =>
+              new Date(busy.start) >= currentSlotEnd ||
+              new Date(busy.end) <= currentSlotStart
           );
-        }
 
-        currentDate.setMinutes(currentDate.getMinutes() + 30);
+          if (isSlotAvailable && currentSlotEnd <= slotEnd) {
+            // Push the time slot only if it fits within the end time
+            slots[dateString].push(
+              `${currentSlotStart.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}`
+            );
+          }
+
+          slotStart.setMinutes(slotStart.getMinutes() + slotDuration);
+        }
       }
 
-      return slots;
+      isGeneratingSlots.value = false;
+      return slots; // Now returns an object with dates and available slots
+    };
+
+    const isTokenValid = async (token) => {
+      try {
+        // Use the Google Userinfo endpoint to validate the token
+        const response = await axios.get(
+          "https://www.googleapis.com/oauth2/v1/userinfo",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        // If the response is successful, the token is valid
+        return response.status === 200;
+      } catch (error) {
+        // If the request fails, assume the token is invalid
+        console.error("Token validation failed:", error);
+        return false;
+      }
+    };
+
+    const refreshAccessToken = async (refreshToken) => {
+      try {
+        const response = await axios.post(
+          "https://oauth2.googleapis.com/token",
+          null,
+          {
+            params: {
+              client_id: import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID, // Your client ID
+              client_secret: import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_SECRET, // Your client secret
+              refresh_token: refreshToken,
+              grant_type: "refresh_token",
+            },
+          }
+        );
+
+        // Get the new access token from the response
+        const newAccessToken = response.data.access_token;
+
+        return newAccessToken;
+      } catch (error) {
+        console.error("Failed to refresh access token:", error);
+        return null;
+      }
     };
 
     // Function to handle photographer selection and fetch available slots for booking
@@ -224,8 +335,10 @@ export default {
           }
         );
 
+        const recordID = response.data.records[0].id;
+
         // Assuming the response contains the access token in the first record found
-        const accessToken =
+        let accessToken =
           response.data.records.length > 0
             ? response.data.records[0].fields["Access Token"]
             : null;
@@ -236,16 +349,45 @@ export default {
           return;
         }
 
+        let refreshToken =
+          response.data.records.length > 0
+            ? response.data.records[0].fields["Refresh Token"]
+            : null;
+        // Check if the access token is valid
+        const tokenValid = await isTokenValid(accessToken);
+
+        if (!tokenValid) {
+          // If the token is not valid, refresh it
+          const newAccessToken = await refreshAccessToken(refreshToken);
+
+          if (newAccessToken) {
+            // Save the new access token back to Airtable
+            await saveAccessTokenToAirtable(
+              recordID,
+              newAccessToken,
+              refreshToken
+            );
+            accessToken = newAccessToken; // Use the new access token for subsequent requests
+          } else {
+            console.error("Failed to refresh access token.");
+            alert("Could not refresh the photographer's access token.");
+            return;
+          }
+        }
+
         // Fetch the calendar availability using the access token
         const busyTimes = await fetchCalendarAvailability(accessToken);
 
         // Generate available slots based on busy times
-        const availableSlots = generateAvailableTimeSlots(busyTimes);
+        const availableSlots = generateAvailableTimeSlots(
+          busyTimes,
+          props.duration
+        );
 
         // Set the selected photographer and available slots in bookingData
-        bookingData.value.selectedPhotographer = photographerEmail;
-        bookingData.value.availableSlots = availableSlots;
-        console.log(bookingData.value.availableSlots.length);
+        bookingData.selectedPhotographer = photographerEmail;
+        bookingData.availableSlots = availableSlots;
+        console.log(bookingData.availableSlots);
       } catch (error) {
         console.error("Error fetching the photographer's access token:", error);
         alert(
@@ -254,46 +396,47 @@ export default {
       }
     };
 
-    // Function to create a new booking event on the photographer's Google Calendar
-    const createBookingEvent = async (
-      accessToken,
-      calendarId = "primary",
-      slot
+    const saveAccessTokenToAirtable = async (
+      recordID,
+      newAccessToken,
+      refreshToken
     ) => {
-      const [startTime, endTime] = slot.split(" - ");
-      const eventDate = new Date(); // Assuming the event is for today; adjust accordingly for future dates
-      const startDateTime = new Date(
-        `${eventDate.toDateString()} ${startTime}`
-      );
-      const endDateTime = new Date(`${eventDate.toDateString()} ${endTime}`);
+      const airtableBaseId = import.meta.env.VITE_AIRTABLE_BASE_ID;
+      const accessTokenTable = import.meta.env.VITE_ACCESS_TOKEN_TABLE_ID; // Table where access tokens are stored
+      const airtableToken = import.meta.env.VITE_AIRTABLE_TOKEN;
 
       try {
-        await axios.post(
-          `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events`,
+        await axios.patch(
+          `https://api.airtable.com/v0/${airtableBaseId}/${accessTokenTable}`,
           {
-            summary: "Photography Session",
-            start: {
-              dateTime: startDateTime.toISOString(),
-              timeZone: "America/Los_Angeles", // Use the appropriate time zone
-            },
-            end: {
-              dateTime: endDateTime.toISOString(),
-              timeZone: "America/Los_Angeles",
-            },
+            records: [
+              {
+                id: recordID,
+                fields: {
+                  "Access Token": newAccessToken,
+                  "Refresh Token": refreshToken, // Save refresh token if it changes
+                },
+              },
+            ],
           },
           {
             headers: {
-              Authorization: `Bearer ${accessToken}`,
-              "Content-Type": "application/json",
+              Authorization: `Bearer ${airtableToken}`,
             },
           }
         );
-        alert("Booking confirmed!");
+        console.log("Access token updated successfully.");
       } catch (error) {
-        console.error("Error creating booking event:", error);
-        alert("Failed to create the booking. Please try again.");
+        console.error("Error saving new access token to Airtable:", error);
       }
     };
+
+    const slotsForSelectedDate = computed(() => {
+      return bookingData.selectedDate &&
+        bookingData.availableSlots[bookingData.selectedDate]
+        ? bookingData.availableSlots[bookingData.selectedDate]
+        : [];
+    });
 
     return {
       photographers,
@@ -302,7 +445,10 @@ export default {
       bookingData,
       filteredPhotographers, // Use this to access filtered photographers in your template
       handlePhotographerSelected, // Handles the photographer selection
-      createBookingEvent,
+      selectDate,
+      slotsForSelectedDate,
+      selectTimeSlot,
+      isGeneratingSlots,
     };
   },
 };
@@ -337,6 +483,38 @@ export default {
   }
   100% {
     transform: rotate(360deg);
+  }
+}
+.time-slots-container {
+  display: flex; /* Use flexbox for the layout */
+  flex-wrap: wrap; /* Allow items to wrap to the next line */
+  justify-content: flex-start; /* Align items to the left */
+  gap: 10px; /* Optional: Add some space between slots */
+  margin-top: 10px; /* Add some margin above the time slots */
+}
+
+.time-slot {
+  background-color: #f0f0f0; /* Adjust background color */
+  border-radius: 8px; /* Rounded corners */
+  padding: 10px 15px; /* Padding around the text */
+  cursor: pointer; /* Change cursor on hover */
+  transition: background-color 0.3s; /* Smooth transition */
+}
+
+.time-slot:hover {
+  background-color: #e0e0e0; /* Change background color on hover */
+}
+
+/* Responsive styling */
+@media (max-width: 600px) {
+  .time-slot {
+    flex: 1 1 calc(50% - 10px); /* Two slots per row on smaller screens */
+  }
+}
+
+@media (max-width: 400px) {
+  .time-slot {
+    flex: 1 1 calc(100% - 10px); /* One slot per row on mobile */
   }
 }
 </style>

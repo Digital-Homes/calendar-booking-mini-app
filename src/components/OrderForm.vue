@@ -10,6 +10,7 @@
     <div v-if="totalItems > 0" class="cart-summary">
       <h3>Total Items: {{ totalItems }}</h3>
       <h3>Total Price: ${{ totalPrice.toFixed(2) }}</h3>
+      <h3>Total Duration: {{ totalDuration }} minutes</h3>
     </div>
 
     <!-- Add this after your ProductList and AddOnSelection components -->
@@ -93,6 +94,7 @@
     <ChoosePhotographerStep
       v-if="showChoosePhotographerStep"
       :selectedProducts="selectedProducts"
+      :duration="cart.totalDuration"
       @photographerSelected="handlePhotographerSelected"
     />
 
@@ -129,6 +131,7 @@ const showNextButton = ref(false);
 const cart = ref({
   items: [],
   totalPrice: 0,
+  totalDuration: 0,
 });
 const showChoosePhotographerStep = ref(false);
 
@@ -185,6 +188,9 @@ const totalPrice = computed(() => {
   return cart.value.totalPrice; // Calculate total price based on items in cart
 });
 const totalItems = computed(() => cart.value.items.length);
+const totalDuration = computed(() => {
+  return cart.value.totalDuration;
+});
 
 const hasAddOns = computed(() => {
   const hasAddOnsValue = cart.value.items.some(
@@ -202,6 +208,12 @@ const handleCartUpdate = (updatedCartItems) => {
       : parseFloat(item.fields.Price);
     return total + (!isNaN(price) ? price : 0);
   }, 0);
+  cart.value.totalDuration = updatedCartItems.reduce((total, item) => {
+    const time = item.selectedVariant
+      ? parseFloat(item.selectedVariant.duration)
+      : parseFloat(item.fields.Duration);
+    return total + (!isNaN(time) ? time : 0);
+  }, 0);
 
   selectedProducts.value = updatedCartItems;
 
@@ -218,6 +230,7 @@ const handleAddOnToCart = (addOn) => {
   // Add the selected add-on to the cart
   cart.value.items.push(addOn);
   cart.value.totalPrice += parseFloat(addOn.fields.Price); // Update the total price
+  cart.value.totalDuration += parseFloat(addOn.fields.Duration);
   showNextButton.value = true; // Show the next button if items are in the cart
 };
 

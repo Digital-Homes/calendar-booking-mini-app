@@ -154,6 +154,7 @@ const fetchDataFromAirtable = async () => {
                     id: variant.id,
                     name: variant.fields.Name,
                     price: variant.fields.Price,
+                    duration: variant.fields.Duration,
                   }
                 : null;
             })
