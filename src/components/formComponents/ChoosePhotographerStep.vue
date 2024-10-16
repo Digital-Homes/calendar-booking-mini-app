@@ -310,7 +310,7 @@ export default {
 
         // Get the new access token from the response
         const newAccessToken = response.data.access_token;
-
+        console.log(`the token was refreshed`);
         return newAccessToken;
       } catch (error) {
         console.error("Failed to refresh access token:", error);
