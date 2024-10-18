@@ -13,13 +13,22 @@
       <h3>Total Duration: {{ totalDuration }} minutes</h3>
     </div>
 
-    <!-- Add this after your ProductList and AddOnSelection components -->
+    <!-- Next button after add-ons/products -->
     <FormKit
       v-if="showNextButton && !addOnSelectionStep"
       type="button"
       label="Next"
       @click="handleNext"
       class="mt-4 bg-blue-500 text-white py-2 px-4 rounded"
+    />
+    <!-- Next button after choosing slot -->
+    <FormKit
+      type="submit"
+      v-if="canProceedToNextStep"
+      @click="nextStep"
+      label="Next"
+      :disabled="!canProceedToNextStep"
+      class="formkit-button next-button"
     />
 
     <!-- Service selection step -->
@@ -95,7 +104,7 @@
       v-if="showChoosePhotographerStep"
       :selectedProducts="selectedProducts"
       :duration="cart.totalDuration"
-      @photographerSelected="handlePhotographerSelected"
+      @updateBookingData="handleSlotSelected"
     />
 
     <!-- Future steps will be placed here -->
@@ -134,6 +143,7 @@ const cart = ref({
   totalDuration: 0,
 });
 const showChoosePhotographerStep = ref(false);
+const canProceedToNextStep = ref(false);
 
 const emit = defineEmits(["updateCart"]);
 
@@ -178,9 +188,8 @@ const handleNext = () => {
   if (hasAddOns.value) {
     addOnSelectionStep.value = true; // Show AddOnSelection if there are add-ons
   } else {
-    console.log("Proceeding to Choose Photographer Step");
-    // Add logic here to show the photographer selection step
     showChoosePhotographerStep.value = true;
+    showNextButton.value = false;
   }
 };
 
@@ -216,14 +225,15 @@ const handleCartUpdate = (updatedCartItems) => {
   }, 0);
 
   selectedProducts.value = updatedCartItems;
+  showNextButton.value = true;
 
   // Check if the cart has add-ons after updating
-  if (hasAddOns.value) {
-    showNextButton.value = true;
-    // addOnSelectionStep.value = true; // Show the AddOnSelection component if there are add-ons
-  } else {
-    showNextButton.value = true; // Hide if there are no add-ons
-  }
+  // if (hasAddOns.value) {
+  //   showNextButton.value = true;
+  //   // addOnSelectionStep.value = true; // Show the AddOnSelection component if there are add-ons
+  // } else {
+  //   showNextButton.value = true; // Hide if there are no add-ons
+  // }
 };
 
 const handleAddOnToCart = (addOn) => {
@@ -234,8 +244,14 @@ const handleAddOnToCart = (addOn) => {
   showNextButton.value = true; // Show the next button if items are in the cart
 };
 
-const handlePhotographerSelected = () => {
-  console.log("Photographers");
+const handleSlotSelected = (bookingData) => {
+  canProceedToNextStep.value = true;
+  console.log("Slot selected:", bookingData.selectedSlot);
+};
+
+const nextStep = () => {
+  // Logic to move to the next step in your main form
+  console.log("Proceeding to the next step");
 };
 
 watch(selectedProducts, (newVal) => {
