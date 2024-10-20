@@ -123,7 +123,7 @@ import AddOnSelection from "./formComponents/AddOnSelection.vue";
 import ChoosePhotographerStep from "./formComponents/ChoosePhotographerStep.vue";
 
 const stepCompleted = ref(false);
-const userInfo = ref({ email: "", name: "" });
+const userInfo = ref({ email: "", name: "", id: "" });
 const serviceSelected = ref(null);
 const propertyInfo = ref({
   location: "",
@@ -150,6 +150,7 @@ const emit = defineEmits(["updateCart"]);
 const handleEmailChecked = (data) => {
   userInfo.value.email = data.email;
   userInfo.value.name = data.name;
+  userInfo.value.id = data.id;
   stepCompleted.value = true;
 };
 

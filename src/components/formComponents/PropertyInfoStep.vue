@@ -1,15 +1,15 @@
 <template>
   <div>
-    <h2>Property Information</h2>
+    <h2 class="text-xl mb-4 font-['DM_Sans']">Property Location</h2>
     <form @submit.prevent="submitPropertyInfo">
       <FormKit
         type="text"
         v-model="propertyInfo.location"
         @input="fetchLocationSuggestions"
         id="location"
-        label="Property Location:"
+        label="Enter your address"
         required
-        autocomplete="off"
+        autocomplete="on"
       />
       <ul v-if="locationSuggestions.length">
         <li
@@ -25,7 +25,7 @@
         type="number"
         v-model="propertyInfo.squareFootage"
         id="squareFootage"
-        label="Square Footage:"
+        label="Square Footage"
         required
       />
 

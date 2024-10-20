@@ -1,10 +1,19 @@
 <template>
   <div>
-    <h1>What's your email?</h1>
-    <p>Note: Please use the same email every time.</p>
+    <h1 class="text-xl mb-4 font-['DM_Sans']">What's your email?</h1>
+    <p class="text-l mb-4 font-['DM_Sans']">
+      Note: Please use the same email every time.
+    </p>
     <form @submit.prevent="checkEmail">
       <FormKit type="email" v-model="email" label="Email" required />
-      <FormKit type="submit" label="Next" />
+      <div class="flex items-center justify-between mb-4">
+        <!-- <div>
+          <FormKit type="submit" label="← Back" />
+        </div> -->
+        <div class="ml-auto">
+          <FormKit type="submit" label="Next →" />
+        </div>
+      </div>
       <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
     </form>
   </div>
@@ -34,7 +43,11 @@ const checkEmail = async () => {
     );
     const records = response.data.records;
     const userName = records.length > 0 ? records[0].fields["Full Name"] : "";
-    emit("emailChecked", { email: email.value, name: userName });
+    emit("emailChecked", {
+      email: email.value,
+      name: userName,
+      id: response.data.records[0].id,
+    });
   } catch (error) {
     console.error("Error checking email in Airtable:", error);
     errorMessage.value =
