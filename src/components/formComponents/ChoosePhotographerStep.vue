@@ -28,7 +28,7 @@
             outer: 'mb-8',
             wrapper: 'flex flex-wrap',
             option:
-              'flex items-center border-2 border-pink-300 bg-pink-50 rounded-lg p-4 m-2 cursor-pointer hover:border-pink-700',
+              'flex items-center border-2 border-pink-300 bg-pink-50 rounded-lg p-4 m-2 cursor-pointer hover:border-pink-700 shadow-sm',
             decorator: 'hidden',
             messages: 'mt-4',
           }"
@@ -42,29 +42,29 @@
               <img
                 :src="context.option.profilePic"
                 alt="Photographer's profile picture"
-                class="w-12 h-12 rounded-full mr-4 border border-gray-300"
+                class="w-16 h-16 rounded-full mr-4"
               />
               <div class="flex-1">
-                <div class="text-gray-800 text-lg font-semibold mb-1">
+                <div
+                  class="text-base font-medium text-[#3F3F3F] leading-[20.83px] font-['DM_Sans']"
+                >
                   {{ context.option.label }}
                 </div>
                 <div class="flex items-center mb-1">
                   <i
                     v-for="i in 5"
                     :key="i"
-                    class="fa-star"
+                    class="text-[#FFE013]"
                     :class="
-                      i <= context.option.rating
-                        ? 'fas text-yellow-500'
-                        : 'far text-gray-400'
+                      i <= context.option.rating ? 'fas fa-star' : 'far fa-star'
                     "
                   ></i>
                 </div>
-                <div class="text-sm">
+                <div class="text-sm ml-auto">
                   <a
                     :href="context.option.website"
                     target="_blank"
-                    class="text-pink-600 hover:underline"
+                    class="text-[#EB36C5] hover:underline"
                   >
                     View Profile
                   </a>
@@ -90,13 +90,15 @@
               class="w-16 h-16 rounded-full mr-4"
             />
             <div>
-              <h3 class="text-xl font-semibold text-gray-800">
+              <h3
+                class="text-base font-medium text-[#3F3F3F] leading-[20.83px] font-['DM_Sans']"
+              >
                 {{
                   getPhotographerDetails(bookingData.selectedPhotographer)?.name
                 }}
               </h3>
               <div class="flex items-center mt-1">
-                <span v-for="star in 5" :key="star" class="text-yellow-400">
+                <span v-for="star in 5" :key="star" class="text-[#FFE013]">
                   <i
                     v-if="
                       star <=
@@ -117,7 +119,7 @@
                   ?.website
               "
               target="_blank"
-              class="text-pink-600 hover:underline"
+              class="text-[#EB36C5] hover:underline"
             >
               View profile
             </a>
