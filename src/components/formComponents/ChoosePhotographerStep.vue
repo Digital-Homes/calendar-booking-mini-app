@@ -1,6 +1,12 @@
 <template>
   <div>
-    <div v-if="loading" class="spinner"></div>
+    <div
+      v-if="loading"
+      class="flex flex-col items-center justify-center min-h-screen"
+    >
+      <div class="spinner"></div>
+      <h2 class="font-['DM_Sans']">Loading photographers in your area</h2>
+    </div>
     <div v-else>
       <!-- Step 1: Choose Photographer -->
       <div v-if="!bookingData.selectedPhotographer">
@@ -14,7 +20,10 @@
           label="Choose Photographer"
           :options="
             filteredPhotographers.map((photographer) => ({
-              value: photographer.fields.Email,
+              value: {
+                email: photographer.fields.Email,
+                id: photographer.id,
+              },
               label: photographer.fields['Display Name'],
               profilePic:
                 photographer.fields['Profile Picture']?.[0]?.thumbnails?.large
@@ -195,6 +204,9 @@ const props = defineProps({
   duration: {
     type: Number,
   },
+  zipcode: {
+    type: Number,
+  },
 });
 
 const photographers = ref([]);
@@ -219,7 +231,6 @@ const loadingDates = ref(false);
 
 const selectTimeSlot = (date, slot) => {
   bookingData.selectedSlot = { date, time: slot }; // Store the date and time as an object
-  console.log(bookingData.selectedSlot);
   // Emit an event to the parent component to notify that a slot has been selected
   emit("updateBookingData", bookingData);
 };
@@ -267,11 +278,22 @@ const filteredPhotographers = computed(() => {
 
   // Filter logic based on the selected products
   return photographers.value.filter((photographer) => {
-    // Assuming 'services' is a linked record field that returns an array of linked record IDs
     const photographerServices = photographer.fields.Services || []; // Ensure it's defined
-    return props.selectedProducts.some((product) =>
+    const matchesProducts = props.selectedProducts.every((product) =>
       photographerServices.includes(product.id)
     );
+
+    // Add filtering by ZIP code
+    const photographerZipCodes = photographer.fields["Service Zip Codes"]
+      ? photographer.fields["Service Zip Codes"]
+          .split(",")
+          .map((zip) => zip.trim())
+      : [];
+    const matchesZipCode =
+      !props.zipcode || photographerZipCodes.includes(props.zipcode.toString());
+
+    // Return true if both conditions are met
+    return matchesProducts && matchesZipCode;
   });
 });
 
@@ -442,7 +464,6 @@ const refreshAccessToken = async (refreshToken) => {
 
     // Get the new access token from the response
     const newAccessToken = response.data.access_token;
-    console.log(`the token was refreshed`);
     return newAccessToken;
   } catch (error) {
     console.error("Failed to refresh access token:", error);
@@ -451,7 +472,10 @@ const refreshAccessToken = async (refreshToken) => {
 };
 
 // Function to handle photographer selection and fetch available slots for booking
-const handlePhotographerSelected = async (photographerEmail) => {
+const handlePhotographerSelected = async (selectedPhotographer) => {
+  const { email, id } = selectedPhotographer;
+  console.log(email);
+  console.log(id);
   try {
     // Fetch the access token from the photographer's table in Airtable using the selected photographer's email
     const airtableBaseId = import.meta.env.VITE_AIRTABLE_BASE_ID;
@@ -459,7 +483,7 @@ const handlePhotographerSelected = async (photographerEmail) => {
     const airtableToken = import.meta.env.VITE_AIRTABLE_TOKEN;
 
     const response = await axios.get(
-      `https://api.airtable.com/v0/${airtableBaseId}/${accessTokenTable}?filterByFormula=Email='${photographerEmail}'`,
+      `https://api.airtable.com/v0/${airtableBaseId}/${accessTokenTable}?filterByFormula=Email='${email}'`,
       {
         headers: {
           Authorization: `Bearer ${airtableToken}`,
@@ -467,7 +491,7 @@ const handlePhotographerSelected = async (photographerEmail) => {
       }
     );
 
-    const recordID = response.data.records[0].id;
+    const recordID = id;
 
     // Assuming the response contains the access token in the first record found
     let accessToken =
@@ -513,9 +537,9 @@ const handlePhotographerSelected = async (photographerEmail) => {
     );
 
     // Set the selected photographer and available slots in bookingData
-    bookingData.selectedPhotographer = photographerEmail;
+    bookingData.selectedPhotographer = email;
     bookingData.availableSlots = availableSlots;
-    bookingData.selectedPhotographerID = recordID;
+    bookingData.selectedPhotographerID = id;
   } catch (error) {
     console.error("Error fetching the photographer's access token:", error);
     alert(
@@ -553,18 +577,10 @@ const saveAccessTokenToAirtable = async (
         },
       }
     );
-    console.log("Access token updated successfully.");
   } catch (error) {
     console.error("Error saving new access token to Airtable:", error);
   }
 };
-
-// const slotsForSelectedDate = computed(() => {
-//   return bookingData.selectedDate &&
-//     bookingData.availableSlots[bookingData.selectedDate]
-//     ? bookingData.availableSlots[bookingData.selectedDate]
-//     : [];
-// });
 
 const slotsForSelectedDate = computed(() => {
   const formattedDate = new Date(bookingData.selectedDate).toLocaleDateString(

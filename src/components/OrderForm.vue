@@ -7,7 +7,7 @@
     />
 
     <!-- Display Total Items and Total Price -->
-    <div v-if="totalItems > 0" class="cart-summary">
+    <div v-if="totalItems > 0 && !showThankYouScreen" class="cart-summary">
       <h3>Total Items: {{ totalItems }}</h3>
       <h3>Total Price: ${{ totalPrice.toFixed(2) }}</h3>
       <h3>Total Duration: {{ totalDuration }} minutes</h3>
@@ -24,10 +24,18 @@
     <!-- Next button after choosing slot -->
     <FormKit
       type="submit"
-      v-if="canProceedToNextStep"
+      v-if="canProceedToNextStep && userInfo.id == ''"
       @click="nextStep"
-      label="Next →"
+      label="Proceed to Payment"
       :disabled="!canProceedToNextStep"
+      class="formkit-button next-button"
+    />
+
+    <FormKit
+      type="submit"
+      v-if="canProceedToNextStep && userInfo.id !== '' && !showThankYouScreen"
+      @click="placeOrder"
+      label="Place Order"
       class="formkit-button next-button"
     />
 
@@ -84,7 +92,8 @@
         propertyStatusSubmitted &&
         categorySelectionSubmitted &&
         !addOnSelectionStep &&
-        !showChoosePhotographerStep
+        !showChoosePhotographerStep &&
+        !showThankYouScreen
       "
       :category="selectedCategory"
       :squareFootage="propertyInfo.squareFootage"
@@ -104,8 +113,21 @@
       v-if="showChoosePhotographerStep"
       :selectedProducts="selectedProducts"
       :duration="cart.totalDuration"
+      :zipcode="propertyInfo.zipcode"
       @updateBookingData="handleSlotSelected"
     />
+
+    <div
+      v-if="showThankYouScreen"
+      class="flex flex-col items-center justify-center min-h-screen"
+    >
+      <h2 class="font-['DM_Sans']">Thank you for placing your order</h2>
+      <h3 class="font-['DM_Sans']">
+        You will shortly receive a confirmation email
+      </h3>
+    </div>
+
+    <!-- <PaymentStep/> -->
 
     <!-- Future steps will be placed here -->
   </div>
@@ -113,6 +135,7 @@
 
 <script setup>
 import { ref, computed, watch, defineEmits } from "vue";
+import axios from "axios";
 
 import EmailStep from "./formComponents/EmailStep.vue";
 import FormSelectionStep from "./formComponents/FormSelectionStep.vue";
@@ -130,6 +153,7 @@ const propertyInfo = ref({
   location: "",
   squareFootage: 0, // Initialize as a number
   notes: "",
+  zipcode: "",
 });
 const propertyInfoSubmitted = ref(false);
 const propertyStatusSubmitted = ref(false);
@@ -145,6 +169,15 @@ const cart = ref({
 });
 const showChoosePhotographerStep = ref(false);
 const canProceedToNextStep = ref(false);
+const orderBooking = ref({
+  photographerID: null,
+  timeslot: {},
+});
+const showThankYouScreen = ref(false);
+const userPropertyStatus = [];
+const selectedProductIDs = [];
+const selectedVariantIDs = [];
+const selectedAddonIDs = [];
 
 const emit = defineEmits(["updateCart"]);
 
@@ -165,12 +198,31 @@ const handlePropertyInfoSubmitted = (info) => {
     location: info.location,
     squareFootage: parseFloat(info.squareFootage), // Convert to number if it's a string
     notes: info.notes,
+    zipcode: parseFloat(info.zipcode),
   };
   propertyInfoSubmitted.value = true;
 };
 
 const handlePropertyStatusSubmitted = (propertyStatus) => {
   // Handle the property status here
+  if (propertyStatus.ownerOccupied === true) {
+    userPropertyStatus.push("Owner Occupied");
+  }
+  if (propertyStatus.tenantOccupied === true) {
+    userPropertyStatus.push("Tenant Occupied");
+  }
+  if (propertyStatus.vacant == true) {
+    userPropertyStatus.push("Vacant");
+  }
+  if (propertyStatus.furnishedOrStaged == true) {
+    userPropertyStatus.push("Furnished or Staged");
+  }
+  if (propertyStatus.unfurnished === true) {
+    userPropertyStatus.push("Unfurnished");
+  }
+  if (propertyStatus.commercialProperty === true) {
+    userPropertyStatus.push("Commercial Property");
+  }
   propertyStatusSubmitted.value = true;
 };
 
@@ -228,14 +280,6 @@ const handleCartUpdate = (updatedCartItems) => {
 
   selectedProducts.value = updatedCartItems;
   showNextButton.value = true;
-
-  // Check if the cart has add-ons after updating
-  // if (hasAddOns.value) {
-  //   showNextButton.value = true;
-  //   // addOnSelectionStep.value = true; // Show the AddOnSelection component if there are add-ons
-  // } else {
-  //   showNextButton.value = true; // Hide if there are no add-ons
-  // }
 };
 
 const handleAddOnToCart = (addOn) => {
@@ -243,17 +287,171 @@ const handleAddOnToCart = (addOn) => {
   cart.value.items.push(addOn);
   cart.value.totalPrice += parseFloat(addOn.fields.Price); // Update the total price
   cart.value.totalDuration += parseFloat(addOn.fields.Duration);
+  selectedAddonIDs.push(addOn.id);
   showNextButton.value = true; // Show the next button if items are in the cart
 };
 
 const handleSlotSelected = (bookingData) => {
   canProceedToNextStep.value = true;
+  orderBooking.value.photographerID = bookingData.selectedPhotographerID;
+  orderBooking.value.timeslot = bookingData.selectedSlot;
   console.log("Slot selected:", bookingData.selectedSlot);
+  // console.log("Photographer record", bookingData.selectedPhotographerID);
 };
 
 const nextStep = () => {
   // Logic to move to the next step in your main form
   console.log("Proceeding to the next step");
+};
+
+// const placeOrder = () => {
+//   showChoosePhotographerStep.value = false;
+//   showThankYouScreen.value = true;
+// };
+
+const placeOrder = async () => {
+  const airtableBase = import.meta.env.VITE_AIRTABLE_BASE_ID;
+  const agentsTable = import.meta.env.VITE_AGENT_TABLE_NAME;
+  const ordersTable = import.meta.env.VITE_ORDER_TABLE_NAME;
+  const airtableToken = import.meta.env.VITE_AIRTABLE_TOKEN;
+
+  //selected products' id
+  selectedProducts.value.forEach((product) => {
+    // Push only the ID as a string for selected products
+    selectedProductIDs.push(product.id);
+
+    // If there's a selected variant, push only the variant ID as a string
+    if (product.selectedVariant) {
+      selectedVariantIDs.push(product.selectedVariant.id);
+    }
+  });
+
+  const duration = cart.value.totalDuration;
+
+  // Convert "Wednesday, October 23, 2024" to "2024-10-23"
+  const dateParts = orderBooking.value.timeslot.date.split(", "); // Split by commas
+  const [_, monthDay, year] = dateParts; // Get "October 23, 2024"
+  const parsedDate = new Date(`${monthDay}, ${year}`); // Create a valid date object
+  let shootEndTime = "";
+
+  // Format the parsed date into YYYY-MM-DD
+  const formattedDate = parsedDate.toISOString().split("T")[0]; // "2024-10-23"
+
+  // Combine with time
+  const shootStartTime = `${formattedDate}T${orderBooking.value.timeslot.time}:00`; // Include seconds
+
+  const startDate = new Date(shootStartTime);
+
+  if (isNaN(startDate.getTime())) {
+    console.error("Invalid start date:", shootStartTime);
+  } else {
+    const endDate = new Date(startDate.getTime() + duration * 60000); // Add duration in minutes
+
+    shootEndTime = endDate.toISOString(); // ISO format for Airtable
+  }
+
+  try {
+    // Check if the customer does not exist
+    if (!userInfo.value.id) {
+      // Create a new customer in Airtable
+      const customerResponse = await axios.post(
+        `https://api.airtable.com/v0/${airtableBase}/${agentsTable}`,
+        {
+          fields: {
+            Email: userInfo.value.email,
+          },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${airtableToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (customerResponse.status === 200 || customerResponse.status === 201) {
+        const customerId = customerResponse.data.id;
+        userInfo.value.id = customerId; // Save the customer record ID
+
+        // Placeholder: Create a new order with the newly created customer ID
+        const orderResponse = await axios.post(
+          `https://api.airtable.com/v0/${airtableBase}/${ordersTable}`,
+          {
+            fields: {
+              Agent: [customerId], // Pass the existing agent ID to the 'Agent' field
+              Type: selectedCategory.value,
+              Address: propertyInfo.value.location,
+              ["Square Footage"]: propertyInfo.value.squareFootage,
+              ["Property Status"]: userPropertyStatus,
+              ["Additional Information/Questions/Requests"]:
+                propertyInfo.value.notes,
+              Services: selectedProductIDs,
+              Variant: selectedVariantIDs,
+              ["Add-Ons"]: selectedAddonIDs,
+              ["Shoot Start Time (Main Product)"]: shootStartTime,
+              ["Shoot End Time (Main Product)"]: shootEndTime,
+              ["Photographer (Main Product)"]: [
+                orderBooking.value.photographerID,
+              ],
+              ["Order Total"]: cart.value.totalPrice,
+              ["Order Status"]: "New Order",
+            },
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${airtableToken}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (orderResponse.status === 200 || orderResponse.status === 201) {
+          showChoosePhotographerStep.value = false;
+          showThankYouScreen.value = true;
+        }
+      } else {
+        console.log(`Something went wrong`, orderResponse);
+      }
+    } else {
+      const orderResponse = await axios.post(
+        `https://api.airtable.com/v0/${airtableBase}/${ordersTable}`,
+        {
+          fields: {
+            Agent: [userInfo.value.id], // Pass the existing agent ID to the 'Agent' field
+            Type: selectedCategory.value,
+            Address: propertyInfo.value.location,
+            ["Square Footage"]: propertyInfo.value.squareFootage,
+            ["Property Status"]: userPropertyStatus,
+            ["Additional Information/Questions/Requests"]:
+              propertyInfo.value.notes,
+            Services: selectedProductIDs,
+            Variant: selectedVariantIDs,
+            ["Add-Ons"]: selectedAddonIDs,
+            ["Shoot Start Time (Main Product)"]: shootStartTime,
+            ["Shoot End Time (Main Product)"]: shootEndTime,
+            ["Photographer (Main Product)"]: [
+              orderBooking.value.photographerID,
+            ],
+            ["Order Total"]: cart.value.totalPrice,
+            ["Order Status"]: "New Order",
+          },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${airtableToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (orderResponse.status === 200 || orderResponse.status === 201) {
+        showChoosePhotographerStep.value = false;
+        showThankYouScreen.value = true;
+      }
+    }
+  } catch (error) {
+    console.error("An error occurred while placing the order:", error);
+  }
 };
 
 watch(selectedProducts, (newVal) => {
