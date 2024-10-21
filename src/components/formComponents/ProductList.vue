@@ -227,8 +227,7 @@ fetchDataFromAirtable();
 .product-card {
   border: 1px solid #ccc;
   border-radius: 8px;
-  padding: 16px;
-  width: 200px;
+
   text-align: center;
   background-color: #fff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
