@@ -1,7 +1,7 @@
 <template>
   <div>
-    <h1>Check Property Status</h1>
-    <form @submit.prevent="submitPropertyStatus">
+    <h2 class="text-xl mb-4 font-['DM_Sans']">Check Property Status</h2>
+    <form @submit.prevent="submitPropertyStatus" class="font-['DM_Sans']">
       <FormKit
         type="checkbox"
         v-model="propertyStatus.ownerOccupied"
@@ -28,7 +28,7 @@
         v-model="propertyStatus.commercialProperty"
         label="Commercial Property"
       />
-      <FormKit type="submit" label="Next" />
+      <FormKit type="submit" label="Next →" />
     </form>
   </div>
 </template>

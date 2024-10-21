@@ -10,12 +10,17 @@
         label="Enter your address"
         required
         autocomplete="off"
+        class="font-['DM_Sans']"
       />
-      <ul v-if="locationSuggestions.length">
+      <ul
+        v-if="locationSuggestions.length"
+        class="mt-2 border rounded-lg shadow-lg bg-white z-10"
+      >
         <li
           v-for="suggestion in locationSuggestions"
           :key="suggestion"
           @click="selectLocation(suggestion)"
+          class="cursor-pointer p-2 hover:bg-gray-100 font-['DM_Sans']"
         >
           {{ suggestion.description }}
         </li>
@@ -27,6 +32,7 @@
         id="squareFootage"
         label="Square Footage"
         required
+        class="font-['DM_Sans']"
       />
 
       <FormKit
@@ -34,11 +40,12 @@
         v-model="propertyInfo.notes"
         id="notes"
         label="Do you have any specific notes or requests about this property?"
+        class="font-['DM_Sans']"
       />
 
       <FormKit
         type="submit"
-        label="Next"
+        label="Next →"
         :classes="{ base: 'submit-button' }"
       />
     </form>

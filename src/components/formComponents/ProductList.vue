@@ -1,45 +1,66 @@
 <template>
   <div>
-    <FormKit
-      type="button"
-      label="Back to Categories"
-      @click="$emit('goBackToCategories')"
-      class="back-to-categories-button"
-    />
+    <div
+      v-if="isLoading"
+      class="flex flex-col items-center justify-center min-h-screen"
+    >
+      <div class="spinner"></div>
+      <h2 class="font-['DM_Sans']">Loading products</h2>
+    </div>
 
-    <div v-if="isLoading">Loading products...</div>
     <div v-if="notification" class="notification">
       {{ notification }}
     </div>
 
     <div v-if="!isLoading && airtableData.length">
+      <h2
+        class="text-xl mb-4 font-['DM_Sans'] flex flex-col items-center justify-center mt-20"
+      >
+        Choose Your Service
+      </h2>
+
       <div class="product-cards">
         <div
           v-for="record in airtableData"
           :key="record.id"
-          class="product-card"
+          class="product-card h-300"
         >
-          <div
-            class="product-images"
-            v-if="record.fields.Image && record.fields.Image.length"
-          >
+          <div class="product-images">
             <img
+              v-if="record.fields.Image && record.fields.Image.length"
               v-for="image in record.fields.Image"
               :key="image.id"
               :src="image.url"
               alt="Product image"
-              class="product-image"
+              class="w-full object-cover rounded-md mb-2"
+            />
+            <img
+              v-if="!record.fields.Image || !record.fields.Image.length"
+              src="https://res.cloudinary.com/digital-homes/image/upload/v1726770736/logo.png"
+              alt="Fallback image"
+              class="w-full object-cover rounded-md mb-2"
             />
           </div>
-          <h3>{{ record.fields.Name }}</h3>
-          <p v-if="record.fields.Price">${{ record.fields.Price }}</p>
-          <p v-if="record.fields.Description">
+
+          <h3 class="text-m font-500 font-['DM_Sans']">
+            {{ record.fields.Name }}
+          </h3>
+          <p
+            v-if="record.fields.Price"
+            class="text-m font-normal font-['DM_Sans']"
+          >
+            ${{ record.fields.Price }}
+          </p>
+          <p
+            v-if="record.fields.Description"
+            class="text-sm font-['DM_Sans'] font-200 mt-10"
+          >
             {{ record.fields.Description }}
           </p>
 
           <div v-if="record.fields.Variants && record.fields.Variants.length">
             <template v-if="record.fields.Variants.length === 1">
-              <p>
+              <p class="text-sm font-200 font-['DM_Sans']">
                 Selected Variant: {{ record.fields.Variants[0].name }} - ${{
                   record.fields.Variants[0].price
                 }}
@@ -49,13 +70,14 @@
               <label for="variantSelect">Choose a variant:</label>
               <select
                 id="variantSelect"
-                class="variant-dropdown"
+                class="variant-dropdown text-sm font-100 font-['DM_Sans']"
                 v-model="record.selectedVariant"
               >
                 <option
                   v-for="variant in record.fields.Variants"
                   :key="variant.id"
                   :value="variant"
+                  class="text-sm font-100 font-['DM_Sans']"
                 >
                   {{ variant.name }} - ${{ variant.price }}
                 </option>
@@ -63,15 +85,26 @@
             </template>
           </div>
 
+          <div class="flex-grow"></div>
+          <!-- This div pushes the button to the bottom -->
+
           <FormKit
             type="button"
             label="Add to Cart"
             @click="addToCart(record)"
-            class="add-to-cart-button"
+            class="add-to-cart-button font-['DM_Sans'] mt-auto"
           />
         </div>
       </div>
     </div>
+    <div class="mt-5">
+      <FormKit
+        type="button"
+        label="Back to Categories"
+        @click="$emit('goBackToCategories')"
+      />
+    </div>
+
     <div v-if="!isLoading && airtableData.length === 0">No products found.</div>
   </div>
 </template>
@@ -158,7 +191,8 @@ const fetchDataFromAirtable = async () => {
                   }
                 : null;
             })
-            .filter(Boolean);
+            .filter(Boolean)
+            .sort((a, b) => a.price - b.price);
 
           if (record.fields.Variants.length === 1) {
             record.selectedVariant = record.fields.Variants[0];
@@ -222,12 +256,14 @@ fetchDataFromAirtable();
 .product-cards {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 8px;
+  width: 100%;
 }
 .product-card {
   border: 1px solid #ccc;
   border-radius: 8px;
-
+  padding: 16px;
+  width: 250px;
   text-align: center;
   background-color: #fff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -253,6 +289,7 @@ fetchDataFromAirtable();
   border-radius: 5px; /* Rounded corners */
   cursor: pointer; /* Pointer cursor for hover */
   transition: background-color 0.3s; /* Smooth background transition */
+  width: 100%;
 }
 
 .add-to-cart-button:hover {
@@ -275,5 +312,23 @@ fetchDataFromAirtable();
   text-align: left;
   border: 1px solid #ddd;
   border-radius: 5px;
+}
+
+.spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-left-color: #000;
+  border-radius: 50%;
+  width: 2rem;
+  height: 2rem;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 </style>

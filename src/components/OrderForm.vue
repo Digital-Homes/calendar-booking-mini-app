@@ -17,7 +17,7 @@
     <FormKit
       v-if="showNextButton && !addOnSelectionStep"
       type="button"
-      label="Next"
+      label="Next →"
       @click="handleNext"
       class="mt-4 bg-blue-500 text-white py-2 px-4 rounded"
     />
@@ -26,7 +26,7 @@
       type="submit"
       v-if="canProceedToNextStep"
       @click="nextStep"
-      label="Next"
+      label="Next →"
       :disabled="!canProceedToNextStep"
       class="formkit-button next-button"
     />
@@ -113,6 +113,7 @@
 
 <script setup>
 import { ref, computed, watch, defineEmits } from "vue";
+
 import EmailStep from "./formComponents/EmailStep.vue";
 import FormSelectionStep from "./formComponents/FormSelectionStep.vue";
 import PropertyInfoStep from "./formComponents/PropertyInfoStep.vue";
