@@ -334,10 +334,9 @@ const placeOrder = async () => {
   const parsedDate = new Date(`${monthDay}, ${year}`); // Create a valid date object
   let shootEndTime = "";
 
-  // Format the parsed date into YYYY-MM-DD
   const formattedDate = parsedDate.toISOString().split("T")[0]; // "2024-10-23"
 
-  // Combine with time
+  // Combine with time (already in 24-hour format)
   const shootStartTime = `${formattedDate}T${orderBooking.value.timeslot.time}:00`; // Include seconds
 
   const startDate = new Date(shootStartTime);
@@ -345,9 +344,17 @@ const placeOrder = async () => {
   if (isNaN(startDate.getTime())) {
     console.error("Invalid start date:", shootStartTime);
   } else {
-    const endDate = new Date(startDate.getTime() + duration * 60000); // Add duration in minutes
+    // Add duration in minutes
+    const endDate = new Date(startDate.getTime() + duration * 60000);
 
-    shootEndTime = endDate.toISOString(); // ISO format for Airtable
+    // Format the end date in local time without using ISO
+    shootEndTime = endDate.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+
+    console.log("End Time:", shootEndTime);
   }
 
   try {
