@@ -336,25 +336,28 @@ const placeOrder = async () => {
 
   const formattedDate = parsedDate.toISOString().split("T")[0]; // "2024-10-23"
 
-  // Combine with time (already in 24-hour format)
+  // Combine with time (assuming this is already in 24-hour format, like "14:30" for 2:30 PM)
   const shootStartTime = `${formattedDate}T${orderBooking.value.timeslot.time}:00`; // Include seconds
+  console.log(shootStartTime);
 
   const startDate = new Date(shootStartTime);
+  console.log(startDate);
+  let endDate;
 
   if (isNaN(startDate.getTime())) {
     console.error("Invalid start date:", shootStartTime);
   } else {
-    // Add duration in minutes
-    const endDate = new Date(startDate.getTime() + duration * 60000);
+    // Add duration in minutes (e.g., 75 minutes)
+    endDate = new Date(startDate.getTime() + duration * 60000);
+    console.log(endDate);
 
-    // Format the end date in local time without using ISO
-    shootEndTime = endDate.toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
+    // Format the end time back to "YYYY-MM-DDTHH:mm:ss" (24-hour format)
+    shootEndTime = `${formattedDate}T${String(endDate.getHours()).padStart(
+      2,
+      "0"
+    )}:${String(endDate.getMinutes()).padStart(2, "0")}:00`;
 
-    console.log("End Time:", shootEndTime);
+    console.log("End Time:", shootEndTime); // Correctly formatted end time
   }
 
   try {
@@ -395,8 +398,8 @@ const placeOrder = async () => {
               Services: selectedProductIDs,
               Variant: selectedVariantIDs,
               ["Add-Ons"]: selectedAddonIDs,
-              ["Shoot Start Time (Main Product)"]: shootStartTime,
-              ["Shoot End Time (Main Product)"]: shootEndTime,
+              ["Shoot Start Time (Main Product)"]: startDate,
+              ["Shoot End Time (Main Product)"]: endDate,
               ["Photographer (Main Product)"]: [
                 orderBooking.value.photographerID,
               ],
@@ -434,8 +437,8 @@ const placeOrder = async () => {
             Services: selectedProductIDs,
             Variant: selectedVariantIDs,
             ["Add-Ons"]: selectedAddonIDs,
-            ["Shoot Start Time (Main Product)"]: shootStartTime,
-            ["Shoot End Time (Main Product)"]: shootEndTime,
+            ["Shoot Start Time (Main Product)"]: startDate,
+            ["Shoot End Time (Main Product)"]: endDate,
             ["Photographer (Main Product)"]: [
               orderBooking.value.photographerID,
             ],
