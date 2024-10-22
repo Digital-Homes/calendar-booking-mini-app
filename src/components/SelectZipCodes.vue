@@ -140,8 +140,6 @@ const reverseGeocodeZip = async (coordinates) => {
             zipCodesArray.push(result.address_components.zip);
           }
         });
-      } else {
-        console.error("Unexpected response format:", data);
       }
     } catch (error) {
       console.error("Error fetching ZIP codes:", error);
