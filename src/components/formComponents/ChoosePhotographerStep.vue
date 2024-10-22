@@ -329,82 +329,85 @@ const fetchCalendarAvailability = async (
 
 const fetchPhotographerSchedule = async (photographerId) => {
   console.log(photographerId);
-  const airtableUrl = `https://api.airtable.com/v0/${airtableBaseId}/${photographerTable}/${photographerId}`;
 
   try {
-    const response = await fetch(airtableUrl, {
-      headers: {
-        Authorization: `Bearer ${airtableToken}`,
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await axios.get(
+      `https://api.airtable.com/v0/${airtableBaseId}/${photographerTable}/${photographerId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${airtableToken}`,
+        },
+      }
+    );
 
-    if (!response.ok) {
-      throw new Error(`Error fetching photographer data: ${response}`);
-    }
+    // if (!response.ok) {
+    //   throw new Error(`Error fetching photographer data: ${response}`);
+    // }
 
-    const photographerRecord = await response.json();
-    console.log(photographerRecord);
+    // const photographerRecord = response.data.records[0];
+    console.log(response.data);
 
     // Check if the photographer overrides the default timing
-    const overrideTiming =
-      photographerRecord.fields["Default Availability Override"];
+    // const overrideTiming =
+    //   photographerRecord.fields["Default Availability Override"];
 
     // If override is enabled, construct the schedule from Airtable fields
-    if (overrideTiming) {
-      const photographerSchedule = {
-        0: photographerRecord.fields.Sunday
-          ? {
-              startTime: photographerRecord.fields["Sunday Start Time"],
-              endTime: photographerRecord.fields["Sunday End Time"],
-            }
-          : null,
-        1: photographerRecord.fields.Monday
-          ? {
-              startTime: photographerRecord.fields["Monday Start Time"],
-              endTime: photographerRecord.fields["Monday End Time"],
-            }
-          : null,
-        2: photographerRecord.fields.Tuesday
-          ? {
-              startTime: photographerRecord.fields["Tuesday Start Time"],
-              endTime: photographerRecord.fields["Tuesday End Time"],
-            }
-          : null,
-        3: photographerRecord.fields.Wednesday
-          ? {
-              startTime: photographerRecord.fields["Wednesday Start Time"],
-              endTime: photographerRecord.fields["Wednesday End Time"],
-            }
-          : null,
-        4: photographerRecord.fields.Thursday
-          ? {
-              startTime: photographerRecord.fields["Thursday Start Time"],
-              endTime: photographerRecord.fields["Thursday End Time"],
-            }
-          : null,
-        5: photographerRecord.fields.Friday
-          ? {
-              startTime: photographerRecord.fields["Friday Start Time"],
-              endTime: photographerRecord.fields["Friday End Time"],
-            }
-          : null,
-        6: photographerRecord.fields.Saturday
-          ? {
-              startTime: photographerRecord.fields["Saturday Start Time"],
-              endTime: photographerRecord.fields["Saturday End Time"],
-            }
-          : null,
-      };
+    // if (overrideTiming) {
+    //   const photographerSchedule = {
+    //     0: photographerRecord.fields.Sunday
+    //       ? {
+    //           startTime: photographerRecord.fields["Sunday Start Time"],
+    //           endTime: photographerRecord.fields["Sunday End Time"],
+    //         }
+    //       : null,
+    //     1: photographerRecord.fields.Monday
+    //       ? {
+    //           startTime: photographerRecord.fields["Monday Start Time"],
+    //           endTime: photographerRecord.fields["Monday End Time"],
+    //         }
+    //       : null,
+    //     2: photographerRecord.fields.Tuesday
+    //       ? {
+    //           startTime: photographerRecord.fields["Tuesday Start Time"],
+    //           endTime: photographerRecord.fields["Tuesday End Time"],
+    //         }
+    //       : null,
+    //     3: photographerRecord.fields.Wednesday
+    //       ? {
+    //           startTime: photographerRecord.fields["Wednesday Start Time"],
+    //           endTime: photographerRecord.fields["Wednesday End Time"],
+    //         }
+    //       : null,
+    //     4: photographerRecord.fields.Thursday
+    //       ? {
+    //           startTime: photographerRecord.fields["Thursday Start Time"],
+    //           endTime: photographerRecord.fields["Thursday End Time"],
+    //         }
+    //       : null,
+    //     5: photographerRecord.fields.Friday
+    //       ? {
+    //           startTime: photographerRecord.fields["Friday Start Time"],
+    //           endTime: photographerRecord.fields["Friday End Time"],
+    //         }
+    //       : null,
+    //     6: photographerRecord.fields.Saturday
+    //       ? {
+    //           startTime: photographerRecord.fields["Saturday Start Time"],
+    //           endTime: photographerRecord.fields["Saturday End Time"],
+    //         }
+    //       : null,
+    //   };
 
-      // Remove null entries (days photographer is not available)
-      Object.keys(photographerSchedule).forEach(
-        (key) =>
-          photographerSchedule[key] === null && delete photographerSchedule[key]
-      );
+    //   // Remove null entries (days photographer is not available)
+    //   Object.keys(photographerSchedule).forEach(
+    //     (key) =>
+    //       photographerSchedule[key] === null && delete photographerSchedule[key]
+    //   );
 
-      return photographerSchedule;
-    }
+    //   return photographerSchedule;
+    // }
+
+    // console.log(photographerSchedule);
 
     // If no override, return null to use default 9-5 times
     return null;
