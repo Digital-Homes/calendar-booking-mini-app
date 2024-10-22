@@ -229,6 +229,10 @@ const isGeneratingSlots = ref(false);
 const emit = defineEmits(["updateBookingData"]);
 const loadingDates = ref(false);
 
+const airtableBaseId = import.meta.env.VITE_AIRTABLE_BASE_ID;
+const photographerTable = import.meta.env.VITE_PHOTOGRAPHER_TABLE_ID;
+const airtableToken = import.meta.env.VITE_AIRTABLE_TOKEN;
+
 const selectTimeSlot = (date, slot) => {
   bookingData.selectedSlot = { date, time: slot }; // Store the date and time as an object
   // Emit an event to the parent component to notify that a slot has been selected
@@ -244,10 +248,6 @@ const fetchPhotographers = async () => {
   loading.value = true;
 
   try {
-    const airtableBaseId = import.meta.env.VITE_AIRTABLE_BASE_ID;
-    const photographerTable = import.meta.env.VITE_PHOTOGRAPHER_TABLE_ID;
-    const airtableToken = import.meta.env.VITE_AIRTABLE_TOKEN;
-
     const response = await axios.get(
       `https://api.airtable.com/v0/${airtableBaseId}/${photographerTable}`,
       {
@@ -327,14 +327,101 @@ const fetchCalendarAvailability = async (
   }
 };
 
-// function to generate time slots
+const fetchPhotographerSchedule = async (photographerId) => {
+  console.log(photographerId);
+  const airtableUrl = `https://api.airtable.com/v0/${airtableBaseId}/${photographerTable}/${photographerId}`;
+
+  try {
+    const response = await fetch(airtableUrl, {
+      headers: {
+        Authorization: `Bearer ${airtableToken}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error fetching photographer data: ${response}`);
+    }
+
+    const photographerRecord = await response.json();
+    console.log(photographerRecord);
+
+    // Check if the photographer overrides the default timing
+    const overrideTiming =
+      photographerRecord.fields["Default Availability Override"];
+
+    // If override is enabled, construct the schedule from Airtable fields
+    if (overrideTiming) {
+      const photographerSchedule = {
+        0: photographerRecord.fields.Sunday
+          ? {
+              startTime: photographerRecord.fields["Sunday Start Time"],
+              endTime: photographerRecord.fields["Sunday End Time"],
+            }
+          : null,
+        1: photographerRecord.fields.Monday
+          ? {
+              startTime: photographerRecord.fields["Monday Start Time"],
+              endTime: photographerRecord.fields["Monday End Time"],
+            }
+          : null,
+        2: photographerRecord.fields.Tuesday
+          ? {
+              startTime: photographerRecord.fields["Tuesday Start Time"],
+              endTime: photographerRecord.fields["Tuesday End Time"],
+            }
+          : null,
+        3: photographerRecord.fields.Wednesday
+          ? {
+              startTime: photographerRecord.fields["Wednesday Start Time"],
+              endTime: photographerRecord.fields["Wednesday End Time"],
+            }
+          : null,
+        4: photographerRecord.fields.Thursday
+          ? {
+              startTime: photographerRecord.fields["Thursday Start Time"],
+              endTime: photographerRecord.fields["Thursday End Time"],
+            }
+          : null,
+        5: photographerRecord.fields.Friday
+          ? {
+              startTime: photographerRecord.fields["Friday Start Time"],
+              endTime: photographerRecord.fields["Friday End Time"],
+            }
+          : null,
+        6: photographerRecord.fields.Saturday
+          ? {
+              startTime: photographerRecord.fields["Saturday Start Time"],
+              endTime: photographerRecord.fields["Saturday End Time"],
+            }
+          : null,
+      };
+
+      // Remove null entries (days photographer is not available)
+      Object.keys(photographerSchedule).forEach(
+        (key) =>
+          photographerSchedule[key] === null && delete photographerSchedule[key]
+      );
+
+      return photographerSchedule;
+    }
+
+    // If no override, return null to use default 9-5 times
+    return null;
+  } catch (error) {
+    console.error("Error fetching photographer schedule:", error);
+    return null;
+  }
+};
+
 const generateAvailableTimeSlots = (
   busyTimes,
   requiredDuration, // The total duration required (e.g., 75 minutes)
-  slotInterval = 15, // Interval between slots in minutes (default to 30)
+  slotInterval = 15, // Interval between slots in minutes (default to 15)
   driveTimeBuffer = 30, // Buffer time in minutes before and after the slot
-  startTime = "09:00",
-  endTime = "17:00"
+  photographerSchedule = null, // Photographer's schedule, null if using default
+  defaultStartTime = "09:00", // Default start time (9 AM)
+  defaultEndTime = "17:00" // Default end time (5 PM)
 ) => {
   const slots = {};
   const currentDate = new Date();
@@ -344,13 +431,23 @@ const generateAvailableTimeSlots = (
   for (let i = 0; i < 14; i++) {
     const dateKey = new Date(currentDate);
     dateKey.setDate(currentDate.getDate() + i);
+
+    const dayOfWeek = dateKey.getDay(); // Get the day of the week (0: Sunday, 6: Saturday)
+
+    // Use photographer's custom schedule if provided, otherwise default 9-5
+    const daySchedule =
+      photographerSchedule && photographerSchedule[dayOfWeek]
+        ? photographerSchedule[dayOfWeek]
+        : { startTime: defaultStartTime, endTime: defaultEndTime };
+
+    const { startTime, endTime } = daySchedule;
+
     const dateString = dateKey.toLocaleDateString("en-US", {
       weekday: "long", // Full day of the week (e.g., "Monday")
       year: "numeric", // Full year (e.g., "2024")
       month: "long", // Full month name (e.g., "October")
       day: "numeric", // Day of the month (e.g., "17")
     });
-    // Format the date as needed
 
     // Create an array for the available slots for this specific date
     slots[dateString] = [];
@@ -365,7 +462,7 @@ const generateAvailableTimeSlots = (
 
       // Round to the nearest 15-minute interval
       const minutes = twentyHoursFromNow.getMinutes();
-      const roundedMinutes = Math.ceil(minutes / 15) * 15;
+      const roundedMinutes = Math.ceil(minutes / slotInterval) * slotInterval;
       twentyHoursFromNow.setMinutes(roundedMinutes);
       twentyHoursFromNow.setSeconds(0);
       twentyHoursFromNow.setMilliseconds(0);
@@ -426,6 +523,106 @@ const generateAvailableTimeSlots = (
   return slots; // Now returns an object with dates and available slots
 };
 
+// // function to generate time slots
+// const generateAvailableTimeSlots = (
+//   busyTimes,
+//   requiredDuration, // The total duration required (e.g., 75 minutes)
+//   slotInterval = 15, // Interval between slots in minutes (default to 30)
+//   driveTimeBuffer = 30, // Buffer time in minutes before and after the slot
+//   startTime = "09:00",
+//   endTime = "17:00",
+//   photographerSchedule
+// ) => {
+//   const slots = {};
+//   const currentDate = new Date();
+//   loadingDates.value = true;
+
+//   // Loop for the next 14 days
+//   for (let i = 0; i < 14; i++) {
+//     const dateKey = new Date(currentDate);
+//     dateKey.setDate(currentDate.getDate() + i);
+//     const dateString = dateKey.toLocaleDateString("en-US", {
+//       weekday: "long", // Full day of the week (e.g., "Monday")
+//       year: "numeric", // Full year (e.g., "2024")
+//       month: "long", // Full month name (e.g., "October")
+//       day: "numeric", // Day of the month (e.g., "17")
+//     });
+//     // Format the date as needed
+
+//     // Create an array for the available slots for this specific date
+//     slots[dateString] = [];
+
+//     const slotStart = new Date(dateKey);
+
+//     // Check if it's the first day in the loop (i === 0), if so, set the slot start time 20 hours from now
+//     if (i === 0) {
+//       const twentyHoursFromNow = new Date(
+//         currentDate.getTime() + 20 * 60 * 60 * 1000
+//       );
+
+//       // Round to the nearest 15-minute interval
+//       const minutes = twentyHoursFromNow.getMinutes();
+//       const roundedMinutes = Math.ceil(minutes / 15) * 15;
+//       twentyHoursFromNow.setMinutes(roundedMinutes);
+//       twentyHoursFromNow.setSeconds(0);
+//       twentyHoursFromNow.setMilliseconds(0);
+
+//       slotStart.setHours(twentyHoursFromNow.getHours());
+//       slotStart.setMinutes(twentyHoursFromNow.getMinutes());
+//     } else {
+//       slotStart.setHours(parseInt(startTime.split(":")[0]));
+//       slotStart.setMinutes(parseInt(startTime.split(":")[1]));
+//     }
+
+//     const slotEnd = new Date(dateKey);
+//     slotEnd.setHours(parseInt(endTime.split(":")[0]));
+//     slotEnd.setMinutes(parseInt(endTime.split(":")[1]));
+
+//     while (slotStart < slotEnd) {
+//       const currentSlotStart = new Date(slotStart);
+
+//       // Calculate the time ranges including the drive time buffer
+//       const bufferStart = new Date(currentSlotStart);
+//       bufferStart.setMinutes(bufferStart.getMinutes() - driveTimeBuffer);
+
+//       const requiredSlotEnd = new Date(currentSlotStart);
+//       requiredSlotEnd.setMinutes(
+//         requiredSlotEnd.getMinutes() + requiredDuration
+//       );
+
+//       const bufferEnd = new Date(requiredSlotEnd);
+//       bufferEnd.setMinutes(bufferEnd.getMinutes() + driveTimeBuffer);
+
+//       // Check if the entire duration including buffer times is available
+//       const isSlotAvailable = busyTimes.every(
+//         (busy) =>
+//           new Date(busy.start) >= bufferEnd || // Check if the busy period starts after the buffer end
+//           new Date(busy.end) <= bufferStart // Check if the busy period ends before the buffer start
+//       );
+
+//       if (
+//         isSlotAvailable &&
+//         requiredSlotEnd <= slotEnd &&
+//         currentSlotStart > new Date()
+//       ) {
+//         // Push the time slot only if it fits within the end time and respects the buffer
+//         slots[dateString].push(
+//           `${currentSlotStart.toLocaleTimeString([], {
+//             hour: "2-digit",
+//             minute: "2-digit",
+//           })}`
+//         );
+//       }
+
+//       slotStart.setMinutes(slotStart.getMinutes() + slotInterval); // Move to the next slot interval
+//     }
+//   }
+
+//   isGeneratingSlots.value = false;
+//   loadingDates.value = false;
+//   return slots; // Now returns an object with dates and available slots
+// };
+
 const isTokenValid = async (token) => {
   try {
     // Use the Google Userinfo endpoint to validate the token
@@ -474,8 +671,6 @@ const refreshAccessToken = async (refreshToken) => {
 // Function to handle photographer selection and fetch available slots for booking
 const handlePhotographerSelected = async (selectedPhotographer) => {
   const { email, id } = selectedPhotographer;
-  console.log(email);
-  console.log(id);
   try {
     // Fetch the access token from the photographer's table in Airtable using the selected photographer's email
     const airtableBaseId = import.meta.env.VITE_AIRTABLE_BASE_ID;
@@ -491,7 +686,7 @@ const handlePhotographerSelected = async (selectedPhotographer) => {
       }
     );
 
-    const recordID = id;
+    const recordID = response.data.records[0].id;
 
     // Assuming the response contains the access token in the first record found
     let accessToken =
@@ -501,7 +696,6 @@ const handlePhotographerSelected = async (selectedPhotographer) => {
 
     if (!accessToken) {
       console.error("No access token found for the selected photographer.");
-      alert("Failed to retrieve the photographer's access token.");
       return;
     }
 
@@ -529,11 +723,13 @@ const handlePhotographerSelected = async (selectedPhotographer) => {
 
     // Fetch the calendar availability using the access token
     const busyTimes = await fetchCalendarAvailability(accessToken);
+    const photographerSchedule = await fetchPhotographerSchedule(id);
 
     // Generate available slots based on busy times
-    const availableSlots = generateAvailableTimeSlots(
+    const availableSlots = await generateAvailableTimeSlots(
       busyTimes,
-      props.duration
+      props.duration,
+      photographerSchedule
     );
 
     // Set the selected photographer and available slots in bookingData
