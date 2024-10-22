@@ -121,9 +121,9 @@
       v-if="showThankYouScreen"
       class="flex flex-col items-center justify-center min-h-screen"
     >
-      <h2 class="font-['DM_Sans']">Thank you for placing your order</h2>
+      <h2 class="font-['DM_Sans']">Your appointment has been submitted!</h2>
       <h3 class="font-['DM_Sans']">
-        You will shortly receive a confirmation email
+        We’ll let you know of any additional details we need.
       </h3>
     </div>
 
