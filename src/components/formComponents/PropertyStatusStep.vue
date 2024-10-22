@@ -1,6 +1,7 @@
 <template>
   <div>
-    <h2 class="text-xl mb-4 font-['DM_Sans']">Check Property Status</h2>
+    <h2 class="text-xl mb-4 font-['DM_Sans']">Property Status</h2>
+    <h4 class="text-m mb-4 font-['DM_Sans']">Please check all that apply</h4>
     <form @submit.prevent="submitPropertyStatus" class="font-['DM_Sans']">
       <FormKit
         type="checkbox"

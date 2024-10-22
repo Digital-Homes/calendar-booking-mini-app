@@ -1,19 +1,19 @@
 <template>
   <div>
     <h2 class="text-xl mb-4 font-['DM_Sans']">Property Location</h2>
-    <form @submit.prevent="submitPropertyInfo">
+    <form @submit.prevent="submitPropertyInfo" class="font-['DM_Sans']">
       <FormKit
         type="text"
         v-model="propertyInfo.location"
         @input="fetchLocationSuggestions"
         id="location"
-        label="Enter your address"
+        label="Enter address to view services and pricing"
         required
         autocomplete="off"
         class="font-['DM_Sans']"
       />
       <ul
-        v-if="locationSuggestions.length"
+        v-if="locationSuggestions.length && !locationSelected"
         class="mt-2 border rounded-lg shadow-lg bg-white z-10"
       >
         <li
@@ -53,7 +53,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from "vue";
+import { ref, watch, nextTick } from "vue";
 import axios from "axios";
 
 const emit = defineEmits(["propertyInfoSubmitted"]);
@@ -66,9 +66,12 @@ const propertyInfo = ref({
 });
 
 const locationSuggestions = ref([]);
+const locationSelected = ref(false);
+
 const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
 
 const fetchLocationSuggestions = async () => {
+  locationSelected.value = false;
   if (propertyInfo.value.location.length < 3) {
     locationSuggestions.value = [];
     return;
@@ -93,25 +96,27 @@ const fetchLocationSuggestions = async () => {
 };
 
 const selectLocation = async (suggestion) => {
-  const { fullAddress, zipcode } = await fetchPlaceDetails(suggestion.placeId);
+  try {
+    const { fullAddress, zipcode } = await fetchPlaceDetails(
+      suggestion.placeId
+    );
 
-  if (fullAddress) {
-    propertyInfo.value.location = fullAddress; // Update location with full address
-    propertyInfo.value.zipcode = zipcode; // Update zipcode with extracted value
-    locationSuggestions.value = [];
+    if (fullAddress) {
+      propertyInfo.value.location = fullAddress;
+      propertyInfo.value.zipcode = zipcode;
+
+      // Set location as selected
+      locationSelected.value = true;
+
+      // Force clear suggestions after selection
+      setTimeout(() => {
+        locationSuggestions.value.length = 0; // Clear suggestions array completely
+      }, 100);
+    }
+  } catch (error) {
+    console.error("Error fetching place details:", error);
   }
-
-  locationSuggestions.value = [];
-
-  // Clear suggestions after selection
-  setTimeout(() => {
-    locationSuggestions.value = []; // Clear suggestions after selection with delay
-  }, 50);
 };
-
-watch(propertyInfo, (newValue) => {
-  console.log("Location updated:", newValue.location);
-});
 
 const fetchPlaceDetails = async (placeId) => {
   try {
