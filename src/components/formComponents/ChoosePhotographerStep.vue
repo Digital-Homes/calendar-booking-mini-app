@@ -11,7 +11,20 @@
       <!-- Step 1: Choose Photographer -->
       <div v-if="!bookingData.selectedPhotographer">
         <div v-if="filteredPhotographers.length === 0">
-          <p class="font-['DM_Sans']">No photographers available.</p>
+          <div v-if="!showInquirySentScreen">
+            <p class="font-['DM_Sans']">No photographers available.</p>
+            <FormKit
+              type="button"
+              label="Get in Touch"
+              @click="sendEmail"
+              class="mt-4 bg-blue-500 text-white py-2 px-4 rounded"
+            />
+          </div>
+          <div v-if="showInquirySentScreen">
+            <p class="font-['DM_Sans']">
+              Thanks for your inquiry! We’ll be in touch within 24 hours!
+            </p>
+          </div>
         </div>
         <FormKit
           v-else
@@ -241,6 +254,7 @@ const previousStep = () => {
 const isGeneratingSlots = ref(false);
 const emit = defineEmits(["updateBookingData"]);
 const loadingDates = ref(false);
+const showInquirySentScreen = ref(false);
 
 const airtableBaseId = import.meta.env.VITE_AIRTABLE_BASE_ID;
 const photographerTable = import.meta.env.VITE_PHOTOGRAPHER_TABLE_ID;
@@ -751,6 +765,43 @@ const getPhotographerDetails = (email) => {
           photographer.fields["Profile Picture"]?.[0]?.thumbnails?.large?.url,
       }
     : null;
+};
+
+const sendEmail = async () => {
+  const senderEmail = import.meta.env.VITE_SENDER_EMAIL;
+  const receiverEmail = import.meta.env.VITE_RECEIVER_EMAIL;
+  const brevoKey = import.meta.env.VITE_BREVO_KEY;
+
+  const emailData = {
+    sender: { name: "Digital Homes", email: senderEmail },
+    to: [{ email: receiverEmail }],
+    subject: "Test Email from Vue.js",
+    htmlContent: `<p>No Photographers available for zipcode ${props.zipcode} for the following items.</p>
+    ${props.selectedProducts}
+    `,
+  };
+
+  try {
+    const response = await axios.post(
+      "https://api.brevo.com/v3/smtp/email",
+      emailData,
+      {
+        headers: {
+          "api-key": brevoKey,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (response.status === 201) {
+      showInquirySentScreen.value = true;
+    } else {
+      console.alert("error sending email");
+    }
+  } catch (error) {
+    console.error("Error:", error);
+    alert("Error sending email");
+  }
 };
 </script>
 

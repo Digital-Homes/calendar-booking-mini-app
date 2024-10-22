@@ -295,19 +295,12 @@ const handleSlotSelected = (bookingData) => {
   canProceedToNextStep.value = true;
   orderBooking.value.photographerID = bookingData.selectedPhotographerID;
   orderBooking.value.timeslot = bookingData.selectedSlot;
-  console.log("Slot selected:", bookingData.selectedSlot);
-  // console.log("Photographer record", bookingData.selectedPhotographerID);
 };
 
 const nextStep = () => {
   // Logic to move to the next step in your main form
   console.log("Proceeding to the next step");
 };
-
-// const placeOrder = () => {
-//   showChoosePhotographerStep.value = false;
-//   showThankYouScreen.value = true;
-// };
 
 const placeOrder = async () => {
   const airtableBase = import.meta.env.VITE_AIRTABLE_BASE_ID;
@@ -338,10 +331,8 @@ const placeOrder = async () => {
 
   // Combine with time (assuming this is already in 24-hour format, like "14:30" for 2:30 PM)
   const shootStartTime = `${formattedDate}T${orderBooking.value.timeslot.time}:00`; // Include seconds
-  console.log(shootStartTime);
 
   const startDate = new Date(shootStartTime);
-  console.log(startDate);
   let endDate;
 
   if (isNaN(startDate.getTime())) {
@@ -349,15 +340,12 @@ const placeOrder = async () => {
   } else {
     // Add duration in minutes (e.g., 75 minutes)
     endDate = new Date(startDate.getTime() + duration * 60000);
-    console.log(endDate);
 
     // Format the end time back to "YYYY-MM-DDTHH:mm:ss" (24-hour format)
     shootEndTime = `${formattedDate}T${String(endDate.getHours()).padStart(
       2,
       "0"
     )}:${String(endDate.getMinutes()).padStart(2, "0")}:00`;
-
-    console.log("End Time:", shootEndTime); // Correctly formatted end time
   }
 
   try {
