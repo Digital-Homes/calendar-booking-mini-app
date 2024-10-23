@@ -36,6 +36,7 @@
               value: {
                 email: photographer.fields.Email,
                 id: photographer.id,
+                name: photographer.fields['Display Name'],
               },
               label: photographer.fields['Display Name'],
               profilePic:
@@ -148,17 +149,18 @@
           </div>
         </div>
 
-        <h4 class="font-['DM_Sans']">Select a Date</h4>
+        <h3 class="font-['DM_Sans'] text-lg mb-2 mt-5">Select a Date</h3>
         <div
           v-if="loadingDates && bookingData.availableSlots.length == 0"
           class="font-['DM_Sans']"
         >
-          Loading available dates...
+          <h3>Loading available dates...</h3>
         </div>
         <select
           v-if="!loadingDates && bookingData.availableSlots.length != 0"
           v-model="bookingData.selectedDate"
           @change="selectDate(bookingData.selectedDate)"
+          class="variant-dropdown text-sm font-100 font-['DM_Sans']"
         >
           <option
             v-for="(slots, date) in bookingData.availableSlots"
@@ -176,7 +178,9 @@
         <div
           v-else-if="slotsForSelectedDate && slotsForSelectedDate.length > 0"
         >
-          <h4 class="font-['DM_Sans'] text-lg mb-4">Available Start Times</h4>
+          <h4 class="font-['DM_Sans'] text-lg mb-4 mt-5">
+            Available Start Times
+          </h4>
           <ul class="flex flex-wrap justify-center gap-4 font-['DM_Sans']">
             <li
               v-for="slot in slotsForSelectedDate"
@@ -205,6 +209,17 @@
           <p class="font-['DM_Sans']">
             No time slots available for this date. Choose a different date.
           </p>
+        </div>
+
+        <div
+          v-if="bookingData.selectedSlot.time"
+          class="flex items-center justify-center p-4 bg-pink-50 border-2 border-pink-300 rounded-lg shadow-sm mt-5"
+        >
+          <h3 class="text-[#EB36C5]">
+            Photographer: {{ bookingData.selectedPhotographerName }} Date:
+            {{ bookingData.selectedDate }} Hour:
+            {{ bookingData.selectedSlot.time }}
+          </h3>
         </div>
       </div>
     </div>
@@ -239,6 +254,7 @@ const photographers = ref([]);
 const loading = ref(true);
 const bookingData = reactive({
   selectedPhotographer: null,
+  selectedPhotographerName: "",
   selectedPhotographerID: null,
   availableSlots: [],
   selectedDate: null,
@@ -626,7 +642,7 @@ const refreshAccessToken = async (refreshToken) => {
 
 // Function to handle photographer selection and fetch available slots for booking
 const handlePhotographerSelected = async (selectedPhotographer) => {
-  const { email, id } = selectedPhotographer;
+  const { email, id, name } = selectedPhotographer;
   try {
     // Fetch the access token from the photographer's table in Airtable using the selected photographer's email
     const airtableBaseId = import.meta.env.VITE_AIRTABLE_BASE_ID;
@@ -694,6 +710,7 @@ const handlePhotographerSelected = async (selectedPhotographer) => {
     bookingData.selectedPhotographer = email;
     bookingData.availableSlots = availableSlots;
     bookingData.selectedPhotographerID = id;
+    bookingData.selectedPhotographerName = name;
   } catch (error) {
     console.error("Error fetching the photographer's access token:", error);
     alert(
@@ -806,15 +823,6 @@ const sendEmail = async () => {
 </script>
 
 <style scoped>
-.spinner {
-  border: 4px solid rgba(0, 0, 0, 0.1);
-  border-left-color: #000;
-  border-radius: 50%;
-  width: 2rem;
-  height: 2rem;
-  animation: spin 1s linear infinite;
-}
-
 .photographer-card {
   display: flex;
   align-items: center;
@@ -826,6 +834,15 @@ const sendEmail = async () => {
   height: 50px; /* Adjust as needed */
   border-radius: 50%;
   margin-right: 10px;
+}
+
+.spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-left-color: #000;
+  border-radius: 50%;
+  width: 2rem;
+  height: 2rem;
+  animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
@@ -840,14 +857,14 @@ const sendEmail = async () => {
   display: flex;
   flex-wrap: wrap;
   justify-content: center; /* Center the slots */
-  gap: 10px; /* Space between the slots */
+  gap: 18px; /* Space between the slots */
   margin-top: 10px;
 }
 
 .time-slot {
   background-color: #f0f0f0;
   border-radius: 8px;
-  padding: 15px 20px; /* Increased padding for more space */
+  padding: 15px 15px; /* Increased padding for more space */
   cursor: pointer;
   transition: background-color 0.3s;
   text-align: center; /* Center the text inside */
@@ -877,5 +894,14 @@ const sendEmail = async () => {
   .time-slot {
     flex: 1 1 calc(100% - 10px); /* One slot per row on mobile */
   }
+}
+
+.variant-dropdown {
+  background-size: 12px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 100%;
+  font-size: 0.9rem;
 }
 </style>

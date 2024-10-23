@@ -110,16 +110,20 @@
     <!-- Display Total Items and Total Price -->
     <div
       v-if="totalItems > 0 && !showThankYouScreen && addOnSelectionStep"
-      class="max-w-[768px] mx-auto font-['DM_Sans'] flex flex-col items-center justify-center mt-5"
+      class="max-w-[768px] mx-auto font-['DM_Sans'] flex flex-row items-center justify-center mt-5"
     >
-      <h3>Total: ${{ totalPrice.toFixed(2) }}</h3>
-      <FormKit
-        type="submit"
-        v-if="canProceedToNextStep && userInfo.id !== '' && !showThankYouScreen"
-        @click="handleProceedToCheckout"
-        label="Proceed to Checkout"
-        class="formkit-button next-button"
-      />
+      <h3 class="flex-1 text-center">Total: ${{ totalPrice.toFixed(2) }}</h3>
+      <div class="flex-none">
+        <FormKit
+          type="submit"
+          v-if="
+            canProceedToNextStep && userInfo.id !== '' && !showThankYouScreen
+          "
+          @click="handleProceedToCheckout"
+          label="Proceed to Checkout"
+          class="formkit-button next-button"
+        />
+      </div>
     </div>
 
     <!-- Next button after add-ons/products -->
