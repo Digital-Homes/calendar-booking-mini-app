@@ -1,188 +1,210 @@
 <template>
-  <FormKit type="form" @submit="handleSubmit">
-    <!-- Step 1: Upload or Select from Previous Orders -->
-    <div v-if="step === 1">
-      <h3>Step 1: Upload your Images or Select from Previous Orders</h3>
-      <FormKit
-        type="file"
-        name="images"
-        label="Upload Your Images"
-        multiple
-        @change="handleImageUpload"
-      />
-      <div v-if="pastOrders.length">
-        <h4>Select from Previous Orders</h4>
-        <ul>
-          <li v-for="order in pastOrders" :key="order.id">
-            <input
-              type="radio"
-              :value="order.id"
-              v-model="selectedOrder"
-              :id="'order-' + order.id"
-            />
-            <label :for="'order-' + order.id">{{ order.name }}</label>
-          </li>
-        </ul>
+  <div class="flex flex-col items-center pt-10 md:pt-20">
+    <FormKit type="form">
+      <!-- Step 1: Upload or Select from Previous Orders -->
+
+      <div class="flex space-x-8" v-if="step === 1">
+        <!-- Card 1: Upload Your Own Images -->
+        <div
+          class="service-card cursor-pointer flex flex-col items-center justify-center border border-gray-300 rounded-lg shadow-lg transition-transform transform hover:scale-105"
+          @click="selectOption('upload')"
+        >
+          <img
+            src="https://res.cloudinary.com/digital-homes/image/upload/v1726770736/logo.png"
+            alt="Upload Images"
+            class="w-full h-50 object-cover rounded-md mb-2"
+          />
+          <h4 class="text-m font-normal font-['DM_Sans']">
+            Upload Your Own Images
+          </h4>
+        </div>
+
+        <!-- Card 2: Select from Previous Orders -->
+        <div
+          class="service-card cursor-pointer flex flex-col items-center justify-center border border-gray-300 rounded-lg shadow-lg transition-transform transform hover:scale-105"
+          @click="selectOption('previous')"
+        >
+          <img
+            src="https://res.cloudinary.com/digital-homes/image/upload/v1726770736/logo.png"
+            alt="Select from Previous Orders"
+            class="w-full h-50 object-cover rounded-md mb-2"
+          />
+          <h4 class="text-m font-normal font-['DM_Sans']">
+            Select from Previous Orders
+          </h4>
+        </div>
       </div>
-      <FormKit type="button" label="Next" @click="nextStep" />
-    </div>
+      <div v-if="step === 2" class="upload-container">
+        <h3>Upload Your Images</h3>
 
-    <!-- Step 2: Virtual Staging Options -->
-    <div v-if="step === 2">
-      <h3>Step 2: Select Virtual Staging Options</h3>
-      <FormKit
-        type="select"
-        v-model="stagingType"
-        :options="stagingOptions"
-        label="Select Staging Type"
-      />
-      <FormKit
-        type="select"
-        v-model="numImages"
-        :options="imageNumberOptions"
-        label="Number of Images"
-      />
-      <FormKit type="button" label="Next" @click="nextStep" />
-    </div>
-
-    <!-- Step 3: Room Types -->
-    <div v-if="step === 3 && needsReplacement">
-      <h3>Step 3: Select Room Types</h3>
-      <FormKit
-        type="checkbox"
-        v-model="selectedRooms"
-        :options="roomOptions"
-        label="Select Rooms"
-      />
-      <FormKit type="button" label="Next" @click="nextStep" />
-    </div>
-
-    <!-- Step 4: Room Options -->
-    <div v-if="step === 4">
-      <h3>Step 4: Select Style Options for Each Room</h3>
-      <div v-for="room in selectedRooms" :key="room">
-        <h4>{{ room }}</h4>
+        <!-- File upload input -->
         <FormKit
-          type="checkbox"
-          v-model="roomStyles[room]"
-          :options="getRoomStyles(room)"
-          :label="'Select Styles for ' + room"
+          type="file"
+          name="images"
+          label="Choose your images"
+          multiple
+          accept="image/*"
+          @input="handleFileUpload"
         />
+
+        <!-- 'Next' button to proceed -->
+        <FormKit type="button" label="Next" @click="generateImageUrls" />
       </div>
-      <FormKit type="submit" label="Submit" />
-    </div>
-  </FormKit>
+
+      <div v-if="step === 4">
+        <h3>Select An Order to View Images</h3>
+        {{ props.userid }}
+        <!-- 'Next' button to proceed -->
+      </div>
+    </FormKit>
+  </div>
 </template>
 
-<script>
-import { ref, computed, onMounted } from "vue";
+<script setup>
+import { ref, defineProps, onMounted } from "vue";
 import axios from "axios";
 
-export default {
-  setup() {
-    const step = ref(1);
-    const customerID = "your-customer-id"; // Assume this is passed or fetched
-    const pastOrders = ref([]);
-    const selectedOrder = ref(null);
-    const images = ref([]);
-    const stagingType = ref("");
-    const numImages = ref("");
-    const selectedRooms = ref([]);
-    const roomStyles = ref({});
+const step = ref(1);
+const selectedFiles = ref([]);
+const props = defineProps({
+  userid: String,
+});
+const customerId = props.userid;
+const orders = ref([]);
 
-    const stagingOptions = [
-      { value: "Placement Only", label: "Placement Only" },
-      { value: "Removal Only", label: "Removal Only" },
-      { value: "Removal & Replacement", label: "Both Removal & Replacement" },
-    ];
+const selectOption = (option) => {
+  console.log("Selected option:", option);
+  if (option === "upload") {
+    step.value = 2;
+  } else if (option === "previous") {
+    step.value = 4;
+  }
+};
 
-    const imageNumberOptions = [
-      { value: "1-4", label: "1-4 Images" },
-      { value: "5-9", label: "5-9 Images" },
-      { value: "10+", label: "10+ Images" },
-    ];
+const handleFileUpload = (files) => {
+  selectedFiles.value = files; // Store the uploaded files
+};
 
-    const roomOptions = ["Bedroom", "Bathroom", "Living Room", "Office"];
+const generateImageUrls = async () => {
+  if (selectedFiles.value.length === 0) {
+    console.log("No files selected");
+    return;
+  }
 
-    const getRoomStyles = (room) => {
-      // Fetch room styles from Airtable based on the room
-      // Example options; replace this with actual data fetching from Airtable
-      return [
-        { value: "Modern", label: "Modern" },
-        { value: "Classic", label: "Classic" },
-      ];
-    };
+  try {
+    // Step 1: Upload images to Dropbox
+    const uploadedUrls = await uploadToDropbox(Array.from(selectedFiles.value));
 
-    const needsReplacement = computed(() =>
-      stagingType.value.includes("Replacement")
+    // Step 2: Upload the image URLs to Airtable
+    await uploadToAirtable(uploadedUrls);
+
+    // Step 3: Move to the next step (e.g., step 3 in your workflow)
+    step.value = 3;
+  } catch (error) {
+    console.error("Error during the process:", error);
+  }
+};
+
+const uploadToDropbox = async (files) => {
+  const uploadedImageUrls = [];
+
+  for (let file of files) {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await axios.post(
+        "https://content.dropboxapi.com/2/files/upload",
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer YOUR_DROPBOX_ACCESS_TOKEN`,
+            "Dropbox-API-Arg": JSON.stringify({
+              path: `/digital-homes/virtual-staging/${file.name}`,
+              mode: "add",
+              autorename: true,
+              mute: false,
+            }),
+            "Content-Type": "application/octet-stream",
+          },
+        }
+      );
+
+      // After the file is uploaded, get a shareable link for it
+      const fileLinkResponse = await axios.post(
+        "https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings",
+        {
+          path: response.data.path_lower,
+          settings: { requested_visibility: "public" },
+        },
+        {
+          headers: {
+            Authorization: `Bearer YOUR_DROPBOX_ACCESS_TOKEN`, // Replace with your Dropbox Access Token
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      // Add the shareable URL to the array
+      uploadedImageUrls.push(
+        fileLinkResponse.data.url.replace("?dl=0", "?raw=1")
+      ); // Get a direct link to the image
+    } catch (error) {
+      console.error("Error uploading to Dropbox:", error);
+    }
+  }
+
+  return uploadedImageUrls;
+};
+
+const fetchAndStoreOrders = async () => {
+  orders.value = await fetchOrdersFromAirtable(customerId); // Fetch orders and store them
+};
+
+const fetchOrdersFromAirtable = async (id) => {
+  const airtableApiKey = import.meta.env.VITE_AIRTABLE_TOKEN; // Replace with your Airtable API key
+  const airtableBaseId = import.meta.env.VITE_AIRTABLE_BASE_ID; // Replace with your Airtable Base ID
+  const airtableTableName = import.meta.env.VITE_ORDER_TABLE_NAME; // Replace with your orders table name
+
+  try {
+    const response = await axios.get(
+      `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`,
+      {
+        headers: {
+          Authorization: `Bearer ${airtableApiKey}`,
+          "Content-Type": "application/json",
+        },
+        params: {
+          filterByFormula: `AND({Agent ID} = '${customerId}', {Order Status} = 'Completed')`,
+        },
+      }
     );
 
-    const nextStep = () => {
-      step.value++;
-    };
-
-    const handleImageUpload = (e) => {
-      images.value = e.target.files;
-      // Handle image upload to Airtable here
-      const formData = new FormData();
-      for (const file of images.value) {
-        formData.append("images", file);
-      }
-      axios.post("/airtable/upload-endpoint", formData).then((response) => {
-        console.log("Images uploaded successfully", response.data);
-      });
-    };
-
-    const fetchPastOrders = () => {
-      // Fetch past orders from Airtable based on customerID
-      axios
-        .get(`/airtable/orders?customerID=${customerID}`)
-        .then((response) => {
-          pastOrders.value = response.data.records;
-        });
-    };
-
-    const handleSubmit = () => {
-      // Submit the form data
-      const data = {
-        images: images.value,
-        selectedOrder: selectedOrder.value,
-        stagingType: stagingType.value,
-        numImages: numImages.value,
-        selectedRooms: selectedRooms.value,
-        roomStyles: roomStyles.value,
-      };
-      axios.post("/airtable/submit-endpoint", data).then((response) => {
-        console.log("Form submitted successfully", response.data);
-      });
-    };
-
-    onMounted(() => {
-      fetchPastOrders();
-    });
-
-    return {
-      step,
-      pastOrders,
-      selectedOrder,
-      images,
-      stagingType,
-      numImages,
-      stagingOptions,
-      imageNumberOptions,
-      selectedRooms,
-      roomOptions,
-      roomStyles,
-      getRoomStyles,
-      needsReplacement,
-      nextStep,
-      handleSubmit,
-      handleImageUpload,
-    };
-  },
+    // Assuming the data you want is in response.data.records
+    const orders = response.data.records;
+    console.log("Fetched orders:", orders);
+    return orders;
+  } catch (error) {
+    console.error("Error fetching orders from Airtable:", error);
+  }
 };
+
+onMounted(async () => {
+  await fetchAndStoreOrders();
+});
 </script>
 
 <style scoped>
-/* Add any additional styling if needed */
+.service-card {
+  width: 300px; /* Fixed width */
+  height: 300px; /* Fixed height to accommodate varying text */
+  border-radius: 12px; /* Radius */
+  border: 1.5px solid #ccc; /* Border */
+  padding: 22px 35px; /* Padding: top-bottom 22px, left-right 35px */
+  gap: 21px; /* Gap between items */
+  display: flex; /* Flexbox for inner alignment */
+  flex-direction: column; /* Stack items vertically */
+  align-items: center; /* Center items horizontally */
+  justify-content: center; /* Center items vertically */
+}
 </style>

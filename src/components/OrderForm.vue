@@ -1,5 +1,5 @@
 <template>
-  <div class="mx-auto my-16">
+  <div class="mx-auto my-10">
     <img
       src="/digitalhomes.svg"
       alt="Digital Homes logo"
@@ -126,6 +126,12 @@
       class="max-w-[768px] mx-auto"
     />
 
+    <VirtualEditing
+      v-if="serviceSelected === 'editing' && stepCompleted"
+      class="max-w-[768px] mx-auto"
+      :userid="userInfo.id"
+    />
+
     <!-- Display Total Items and Total Price -->
     <div
       v-if="
@@ -196,6 +202,7 @@ import AddOnSelection from "./formComponents/AddOnSelection.vue";
 import ChoosePhotographerStep from "./formComponents/ChoosePhotographerStep.vue";
 import CheckOut from "./formComponents/CheckOut.vue";
 import PaymentForm from "./formComponents/PaymentForm.vue";
+import VirtualEditing from "./formComponents/VirtualEditing.vue";
 
 const stepCompleted = ref(false);
 const userInfo = ref({ email: "", name: "", id: "" });

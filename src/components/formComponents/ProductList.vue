@@ -7,26 +7,22 @@
       <div class="spinner"></div>
       <h2 class="font-['DM_Sans']">Loading products</h2>
     </div>
-    <div class="mt-5 mx-auto flex flex-col items-start max-w-[1050px]">
-      <FormKit
-        type="button"
-        label="Back to Categories"
-        @click="$emit('goBackToCategories')"
-      />
-    </div>
 
     <div v-if="!isLoading && airtableData.length">
-      <h2
-        class="text-xl mb-4 font-['DM_Sans'] flex flex-col items-center justify-center mt-20"
-      >
+      <h2 class="text-xl mb-2 font-['DM_Sans'] max-w-[1050px] mx-auto">
         Choose Your Service
       </h2>
+      <h3
+        class="text-m font-100 text-[#8C8C8C] mb-4 font-['DM_Sans'] max-w-[1050px] mx-auto"
+      >
+        Add service to fit your listing and budget
+      </h3>
 
       <div class="product-cards flex flex-row items-center justify-center">
         <label
           v-for="record in airtableData"
           :key="record.id"
-          class="product-card h-300 relative flex flex-col items-center justify-between"
+          class="product-card relative flex flex-col items-center justify-between"
           :class="{ 'selected-card': isSelected(record) }"
         >
           <input
@@ -44,13 +40,13 @@
               :key="image.id"
               :src="image.url"
               alt="Product image"
-              class="w-full object-cover rounded-md mb-2"
+              class="w-[120px] h-[100px] object-cover rounded-md"
             />
             <img
               v-if="!record.fields.Image || !record.fields.Image.length"
               src="https://res.cloudinary.com/digital-homes/image/upload/v1726770736/logo.png"
               alt="Fallback image"
-              class="w-full object-cover rounded-md mb-2"
+              class="w-[100px] h-[100px] object-cover rounded-md"
             />
           </div>
 
@@ -95,6 +91,13 @@
     </div>
 
     <div v-if="!isLoading && airtableData.length === 0">No products found.</div>
+    <!-- <div class="mt-5 mx-auto flex flex-col items-start max-w-[1050px]">
+      <FormKit
+        type="button"
+        label="Back to Categories"
+        @click="$emit('goBackToCategories')"
+      />
+    </div> -->
   </div>
 </template>
 
@@ -242,7 +245,7 @@ fetchDataFromAirtable();
   cursor: pointer;
   position: relative;
   width: 250px;
-  height: 350px;
+  height: 250px;
   /* other existing styles */
 }
 
