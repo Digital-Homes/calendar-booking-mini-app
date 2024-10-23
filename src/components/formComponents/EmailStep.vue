@@ -11,7 +11,7 @@
           <FormKit type="submit" label="← Back" />
         </div> -->
         <div class="ml-auto">
-          <FormKit type="submit" label="Next →" />
+          <FormKit type="submit" label="Next Step" />
         </div>
       </div>
       <p v-if="errorMessage" class="error">{{ errorMessage }}</p>

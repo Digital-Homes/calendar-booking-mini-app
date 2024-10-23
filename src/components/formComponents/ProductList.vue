@@ -216,10 +216,6 @@ const addToCart = (product) => {
     emit("updateCart", cart.value);
   } else {
   }
-
-  setTimeout(() => {
-    notification.value = null;
-  }, 5000);
 };
 
 const isSelected = (record) => {

@@ -42,12 +42,14 @@
         label="Do you have any specific notes or requests about this property?"
         class="font-['DM_Sans']"
       />
-
-      <FormKit
-        type="submit"
-        label="Next →"
-        :classes="{ base: 'submit-button' }"
-      />
+      <div class="flex flex-col items-end justify-end ml-auto">
+        <!-- Flex container to align items to the right -->
+        <FormKit
+          type="submit"
+          label="Next Step"
+          :classes="{ base: 'submit-button' }"
+        />
+      </div>
     </form>
   </div>
 </template>

@@ -29,7 +29,9 @@
         v-model="propertyStatus.commercialProperty"
         label="Commercial Property"
       />
-      <FormKit type="submit" label="Next →" />
+      <div class="flex flex-col items-end justify-end ml-auto">
+        <FormKit type="submit" label="Next Step" />
+      </div>
     </form>
   </div>
 </template>

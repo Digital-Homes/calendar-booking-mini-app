@@ -6,11 +6,11 @@
       class="w-60 mx-auto mb-8"
     />
     <!-- Next button after choosing slot -->
-    <FormKit
+    <!-- <FormKit
       type="submit"
       v-if="canProceedToNextStep && userInfo.id == ''"
       @click="nextStep"
-      label="Proceed to Payment"
+      label="Proceed to Paymenttt"
       :disabled="!canProceedToNextStep"
       class="formkit-button next-button"
     />
@@ -21,7 +21,7 @@
       @click="placeOrder"
       label="Place Order"
       class="formkit-button next-button"
-    />
+    /> -->
 
     <!-- Service selection step -->
     <FormSelectionStep
@@ -82,7 +82,8 @@
         categorySelectionSubmitted &&
         !addOnSelectionStep &&
         !showChoosePhotographerStep &&
-        !showThankYouScreen
+        !showThankYouScreen &&
+        !showCheckoutComponent
       "
       :category="selectedCategory"
       :squareFootage="propertyInfo.squareFootage"
@@ -99,7 +100,7 @@
     />
 
     <ChoosePhotographerStep
-      v-if="showChoosePhotographerStep"
+      v-if="showChoosePhotographerStep && !showCheckoutComponent"
       :selectedProducts="selectedProducts"
       :duration="cart.totalDuration"
       :zipcode="propertyInfo.zipcode"
@@ -107,18 +108,33 @@
       class="max-w-[768px] mx-auto"
     />
 
+    <CheckOut
+      v-if="showCheckoutComponent && !showPaymentForm"
+      :selectedProducts="selectedProducts"
+      :location="propertyInfo.location"
+      :appointment="orderBooking.timeslot"
+      :notes="propertyInfo.notes"
+      :photographer="orderBooking.photographerName"
+      class="max-w-[768px] mx-auto"
+      @placeOrder="handlePlaceOrder"
+    />
+
+    <PaymentForm v-if="showPaymentForm" />
+
     <!-- Display Total Items and Total Price -->
     <div
-      v-if="totalItems > 0 && !showThankYouScreen && addOnSelectionStep"
+      v-if="
+        totalItems > 0 &&
+        !showThankYouScreen &&
+        addOnSelectionStep &&
+        !showCheckoutComponent
+      "
       class="max-w-[768px] mx-auto font-['DM_Sans'] flex flex-row items-center justify-center mt-5"
     >
       <h3 class="flex-1 text-center">Total: ${{ totalPrice.toFixed(2) }}</h3>
       <div class="flex-none">
         <FormKit
           type="submit"
-          v-if="
-            canProceedToNextStep && userInfo.id !== '' && !showThankYouScreen
-          "
           @click="handleProceedToCheckout"
           label="Proceed to Checkout"
           class="formkit-button next-button"
@@ -129,14 +145,14 @@
     <!-- Next button after add-ons/products -->
     <div
       v-if="showNextButton && !addOnSelectionStep"
-      class="max-w-[768px] mx-auto font-['DM_Sans'] flex flex-col items-center justify-center"
+      class="max-w-[1050px] ml-auto mx-auto font-['DM_Sans'] flex flex-col items-center justify-center"
     >
       <div
         v-if="totalItems > 0 && !showThankYouScreen"
-        class="w-[860px] max-w-[1050px] mx-auto font-['DM_Sans'] flex flex-row justify-between items-center mt-5"
+        class="w-full ml-auto mx-auto font-['DM_Sans'] flex flex-row justify-between items-center mt-5"
       >
         <h3 class="text-center flex-1">Total: ${{ totalPrice.toFixed(2) }}</h3>
-        <div class="flex-none font-['DM_Sans']">
+        <div class="flex-none font-['DM_Sans'] ml-auto">
           <FormKit
             type="button"
             label="Next Step"
@@ -157,8 +173,6 @@
       </h3>
     </div>
 
-    <!-- <PaymentStep/> -->
-
     <!-- Future steps will be placed here -->
   </div>
 </template>
@@ -175,6 +189,8 @@ import CategorySelectionStep from "./formComponents/CategorySelectionStep.vue";
 import ProductList from "./formComponents/ProductList.vue";
 import AddOnSelection from "./formComponents/AddOnSelection.vue";
 import ChoosePhotographerStep from "./formComponents/ChoosePhotographerStep.vue";
+import CheckOut from "./formComponents/CheckOut.vue";
+import PaymentForm from "./formComponents/PaymentForm.vue";
 
 const stepCompleted = ref(false);
 const userInfo = ref({ email: "", name: "", id: "" });
@@ -202,6 +218,7 @@ const canProceedToNextStep = ref(false);
 const proceedToCheckout = ref(false);
 const orderBooking = ref({
   photographerID: null,
+  photographerName: "",
   timeslot: {},
 });
 const showThankYouScreen = ref(false);
@@ -209,6 +226,8 @@ const userPropertyStatus = [];
 const selectedProductIDs = [];
 const selectedVariantIDs = [];
 const selectedAddonIDs = [];
+const showCheckoutComponent = ref(false);
+const showPaymentForm = ref(false);
 
 const emit = defineEmits(["updateCart"]);
 
@@ -269,6 +288,10 @@ const handleGoBackToCategories = () => {
   // You can also reset any other states if necessary
 };
 
+const handleProceedToCheckout = () => {
+  showCheckoutComponent.value = true;
+};
+
 const handleNext = () => {
   if (hasAddOns.value) {
     addOnSelectionStep.value = true; // Show AddOnSelection if there are add-ons
@@ -327,6 +350,7 @@ const handleSlotSelected = (bookingData) => {
   addOnSelectionStep.value = true;
   orderBooking.value.photographerID = bookingData.selectedPhotographerID;
   orderBooking.value.timeslot = bookingData.selectedSlot;
+  orderBooking.value.photographerName = bookingData.selectedPhotographerName;
 };
 
 const nextStep = () => {
@@ -334,11 +358,23 @@ const nextStep = () => {
   console.log("Proceeding to the next step");
 };
 
+const handlePlaceOrder = () => {
+  if (userInfo.value.id !== "") {
+    placeOrder();
+  } else {
+    showPaymentForm.value = true;
+    console.log("proceed to payment step");
+  }
+};
+
 const placeOrder = async () => {
   const airtableBase = import.meta.env.VITE_AIRTABLE_BASE_ID;
   const agentsTable = import.meta.env.VITE_AGENT_TABLE_NAME;
   const ordersTable = import.meta.env.VITE_ORDER_TABLE_NAME;
   const airtableToken = import.meta.env.VITE_AIRTABLE_TOKEN;
+
+  showCheckoutComponent.value = false;
+  addOnSelectionStep.value = false;
 
   //selected products' id
   selectedProducts.value.forEach((product) => {
