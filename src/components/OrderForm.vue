@@ -1,25 +1,9 @@
 <template>
-  <div class="mx-auto my-16 max-w-[768px]">
+  <div class="mx-auto my-16">
     <img
       src="/digitalhomes.svg"
       alt="Digital Homes logo"
       class="w-60 mx-auto mb-8"
-    />
-
-    <!-- Display Total Items and Total Price -->
-    <div v-if="totalItems > 0 && !showThankYouScreen" class="cart-summary">
-      <h3>Total Items: {{ totalItems }}</h3>
-      <h3>Total Price: ${{ totalPrice.toFixed(2) }}</h3>
-      <h3>Total Duration: {{ totalDuration }} minutes</h3>
-    </div>
-
-    <!-- Next button after add-ons/products -->
-    <FormKit
-      v-if="showNextButton && !addOnSelectionStep"
-      type="button"
-      label="Next →"
-      @click="handleNext"
-      class="mt-4 bg-blue-500 text-white py-2 px-4 rounded"
     />
     <!-- Next button after choosing slot -->
     <FormKit
@@ -33,7 +17,7 @@
 
     <FormKit
       type="submit"
-      v-if="canProceedToNextStep && userInfo.id !== '' && !showThankYouScreen"
+      v-if="proceedToCheckout && userInfo.id !== '' && !showThankYouScreen"
       @click="placeOrder"
       label="Place Order"
       class="formkit-button next-button"
@@ -43,12 +27,14 @@
     <FormSelectionStep
       v-if="!serviceSelected"
       @serviceSelected="handleServiceSelected"
+      class="max-w-[768px] mx-auto"
     />
 
     <!-- Email verification step -->
     <EmailStep
       v-if="serviceSelected && !stepCompleted"
       @emailChecked="handleEmailChecked"
+      class="max-w-[768px] mx-auto"
     />
 
     <!-- Property information step (shown only if service is appointment) -->
@@ -59,6 +45,7 @@
         !propertyInfoSubmitted
       "
       @propertyInfoSubmitted="handlePropertyInfoSubmitted"
+      class="max-w-[768px] mx-auto"
     />
 
     <!-- Editing style step (shown only if service is editing) -->
@@ -78,12 +65,14 @@
         !propertyStatusSubmitted
       "
       @propertyStatusSubmitted="handlePropertyStatusSubmitted"
+      class="max-w-[768px] mx-auto"
     />
 
     <!-- Category selection step (for both services) -->
     <CategorySelectionStep
       v-if="propertyStatusSubmitted && !categorySelectionSubmitted"
       @categorySelected="handleCategorySelected"
+      class="max-w-[768px] mx-auto"
     />
 
     <!-- Product list and add-on components based on the selected category -->
@@ -115,7 +104,44 @@
       :duration="cart.totalDuration"
       :zipcode="propertyInfo.zipcode"
       @updateBookingData="handleSlotSelected"
+      class="max-w-[768px] mx-auto"
     />
+
+    <!-- Display Total Items and Total Price -->
+    <div
+      v-if="totalItems > 0 && !showThankYouScreen && addOnSelectionStep"
+      class="max-w-[768px] mx-auto font-['DM_Sans'] flex flex-col items-center justify-center mt-5"
+    >
+      <h3>Total: ${{ totalPrice.toFixed(2) }}</h3>
+      <FormKit
+        type="submit"
+        v-if="canProceedToNextStep && userInfo.id !== '' && !showThankYouScreen"
+        @click="handleProceedToCheckout"
+        label="Proceed to Checkout"
+        class="formkit-button next-button"
+      />
+    </div>
+
+    <!-- Next button after add-ons/products -->
+    <div
+      v-if="showNextButton && !addOnSelectionStep"
+      class="max-w-[768px] mx-auto font-['DM_Sans'] flex flex-col items-center justify-center"
+    >
+      <div
+        v-if="totalItems > 0 && !showThankYouScreen"
+        class="w-[860px] max-w-[1050px] mx-auto font-['DM_Sans'] flex flex-row justify-between items-center mt-5"
+      >
+        <h3 class="text-center flex-1">Total: ${{ totalPrice.toFixed(2) }}</h3>
+        <div class="flex-none font-['DM_Sans']">
+          <FormKit
+            type="button"
+            label="Next Step"
+            @click="handleNext"
+            class="mt-4 text-white py-2 px-4 rounded"
+          />
+        </div>
+      </div>
+    </div>
 
     <div
       v-if="showThankYouScreen"
@@ -169,6 +195,7 @@ const cart = ref({
 });
 const showChoosePhotographerStep = ref(false);
 const canProceedToNextStep = ref(false);
+const proceedToCheckout = ref(false);
 const orderBooking = ref({
   photographerID: null,
   timeslot: {},
@@ -293,6 +320,7 @@ const handleAddOnToCart = (addOn) => {
 
 const handleSlotSelected = (bookingData) => {
   canProceedToNextStep.value = true;
+  addOnSelectionStep.value = true;
   orderBooking.value.photographerID = bookingData.selectedPhotographerID;
   orderBooking.value.timeslot = bookingData.selectedSlot;
 };

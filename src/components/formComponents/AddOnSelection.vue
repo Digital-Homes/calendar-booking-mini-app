@@ -1,9 +1,11 @@
 <template>
-  <div>
-    <FormKit type="button" label="Back" @click="$emit('goBack')" />
-    <FormKit type="button" label="Next" @click="handleNextClick" />
-    <h2>Select Add-Ons</h2>
-    <div class="product-cards">
+  <div class="max-w-[1050px] mx-auto">
+    <h2
+      class="text-xl mb-4 font-['DM_Sans'] flex flex-col items-center justify-center mt-20"
+    >
+      Select Add-Ons
+    </h2>
+    <div class="product-cards flex flex-row">
       <div v-for="addOn in addOns" :key="addOn.id" class="product-card">
         <div
           class="product-images"
@@ -19,9 +21,6 @@
         </div>
         <h3>{{ addOn.fields.Name }}</h3>
         <p v-if="addOn.fields.Price">${{ addOn.fields.Price }}</p>
-        <p v-if="addOn.fields.Description">
-          {{ addOn.fields.Description }}
-        </p>
         <FormKit
           type="button"
           label="Add to Cart"
@@ -29,6 +28,10 @@
           class="add-to-cart-button"
         />
       </div>
+    </div>
+    <div>
+      <FormKit type="button" label="Previous Step" @click="$emit('goBack')" />
+      <FormKit type="button" label="Next Step" @click="handleNextClick" />
     </div>
   </div>
 </template>
