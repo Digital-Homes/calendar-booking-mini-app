@@ -115,11 +115,16 @@
       :appointment="orderBooking.timeslot"
       :notes="propertyInfo.notes"
       :photographer="orderBooking.photographerName"
+      :total="cart.totalPrice"
       class="max-w-[768px] mx-auto"
       @placeOrder="handlePlaceOrder"
     />
 
-    <PaymentForm v-if="showPaymentForm" />
+    <PaymentForm
+      v-if="showPaymentForm"
+      :total="cart.totalPrice"
+      class="max-w-[768px] mx-auto"
+    />
 
     <!-- Display Total Items and Total Price -->
     <div
