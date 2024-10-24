@@ -51,6 +51,7 @@ const checkEmail = async () => {
     });
   } catch (error) {
     console.error("Error checking email in Airtable:", error);
+    console.log(error);
     errorMessage.value =
       "There was an error checking your email. Please try again later.";
   }

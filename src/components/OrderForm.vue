@@ -124,6 +124,7 @@
       v-if="showPaymentForm"
       :total="cart.totalPrice"
       class="max-w-[768px] mx-auto"
+      @paymentDone="handlePaymentMade"
     />
 
     <VirtualEditing
@@ -360,6 +361,7 @@ const handleAddOnToCart = (addOn) => {
 const handleSlotSelected = (bookingData) => {
   canProceedToNextStep.value = true;
   addOnSelectionStep.value = true;
+  showChoosePhotographerStep.value = false;
   orderBooking.value.photographerID = bookingData.selectedPhotographerID;
   orderBooking.value.timeslot = bookingData.selectedSlot;
   orderBooking.value.photographerName = bookingData.selectedPhotographerName;
@@ -377,6 +379,11 @@ const handlePlaceOrder = () => {
     showPaymentForm.value = true;
     console.log("proceed to payment step");
   }
+};
+
+const handlePaymentMade = () => {
+  showPaymentForm.value = false;
+  placeOrder();
 };
 
 const placeOrder = async () => {

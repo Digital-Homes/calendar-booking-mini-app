@@ -82,19 +82,21 @@
     <!-- Total and Pay Now button -->
     <div class="total-pay-section">
       <span class="">Total: ${{ props.total }}</span>
-      <button class="pay-now-button">Pay Now</button>
+      <button class="pay-now-button" @click="handlePayment">Pay Now</button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, defineProps } from "vue";
+import { ref, defineProps, defineEmits } from "vue";
 
 const props = defineProps({
   total: {
     type: Number,
   },
 });
+
+const emit = defineEmits(["paymentDone"]);
 
 const months = [
   { label: "January", value: "01" },
@@ -115,6 +117,10 @@ const years = Array.from({ length: 10 }, (_, i) => {
   const currentYear = new Date().getFullYear();
   return { label: currentYear + i, value: currentYear + i };
 });
+
+const handlePayment = () => {
+  emit("paymentDone", true);
+};
 </script>
 
 <style scoped>
