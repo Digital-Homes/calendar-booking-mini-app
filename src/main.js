@@ -11,9 +11,9 @@ import SelectZipCodes from "./components/SelectZipCodes.vue";
 
 const routes = [
   { path: "/authenticate", component: Authenticate },
-  { path: "/", component: BookingForm },
-  { path: "/products", component: Products },
-  { path: "/order", component: OrderForm },
+  // { path: "/", component: BookingForm },
+  // { path: "/products", component: Products },
+  { path: "/", component: OrderForm },
   { path: "/zipcodes", component: SelectZipCodes },
 ];
 

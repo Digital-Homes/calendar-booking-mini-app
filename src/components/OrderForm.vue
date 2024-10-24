@@ -361,7 +361,7 @@ const handleAddOnToCart = (addOn) => {
 const handleSlotSelected = (bookingData) => {
   canProceedToNextStep.value = true;
   addOnSelectionStep.value = true;
-  showChoosePhotographerStep.value = false;
+  // showChoosePhotographerStep.value = false;
   orderBooking.value.photographerID = bookingData.selectedPhotographerID;
   orderBooking.value.timeslot = bookingData.selectedSlot;
   orderBooking.value.photographerName = bookingData.selectedPhotographerName;
@@ -373,11 +373,11 @@ const nextStep = () => {
 };
 
 const handlePlaceOrder = () => {
+  showChoosePhotographerStep.value = false;
   if (userInfo.value.id !== "") {
     placeOrder();
   } else {
     showPaymentForm.value = true;
-    console.log("proceed to payment step");
   }
 };
 
