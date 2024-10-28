@@ -41,6 +41,7 @@
         propertyInfoSubmitted &&
         !propertyStatusSubmitted
       "
+      @propertyInfoStep="handleBackToPropertyInfoStep"
       @propertyStatusSubmitted="handlePropertyStatusSubmitted"
       class="max-w-[768px] mx-auto"
     />
@@ -243,6 +244,9 @@ const handleEmailChecked = (data) => {
 //go back to email step
 const handleBackToEmailStep = () => {
   stepCompleted.value = false;
+  userInfo.value.email = "";
+  userInfo.value.name = "";
+  userInfo.value.id = "";
 };
 
 // proceed to property status step
@@ -257,6 +261,14 @@ const handlePropertyInfoSubmitted = (info) => {
 };
 
 // go back to property info step
+const handleBackToPropertyInfoStep = () => {
+  console.log("back to property info");
+  propertyInfoSubmitted.value = false;
+  propertyInfo.value.location = "";
+  propertyInfo.value.squareFootage = 0;
+  propertyInfo.value.notes = "";
+  propertyInfo.value.zipcode = "";
+};
 
 // proceed to category selection
 const handlePropertyStatusSubmitted = (propertyStatus) => {
@@ -281,6 +293,8 @@ const handlePropertyStatusSubmitted = (propertyStatus) => {
   }
   propertyStatusSubmitted.value = true;
 };
+
+// go back to property status step
 
 const handleCategorySelected = (category) => {
   selectedCategory.value = category; // Add this line to store the selected category

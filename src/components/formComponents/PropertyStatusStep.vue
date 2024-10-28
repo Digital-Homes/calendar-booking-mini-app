@@ -29,8 +29,20 @@
         v-model="propertyStatus.commercialProperty"
         label="Commercial Property"
       />
-      <div class="flex flex-col items-end justify-end ml-auto">
-        <FormKit type="submit" label="Next Step" />
+      <div class="flex justify-between items-center w-full mt-4">
+        <!-- Prev Step button aligned to the left -->
+        <div>
+          <FormKit
+            type="button"
+            label="Prev Step"
+            @click="backToPropertyInfoStep"
+            class="mr-auto"
+          />
+        </div>
+        <div>
+          <!-- Next Step button aligned to the right -->
+          <FormKit type="submit" label="Next Step" class="ml-auto" />
+        </div>
       </div>
     </form>
   </div>
@@ -49,10 +61,15 @@ const propertyStatus = ref({
 });
 
 // Emit the selected property status back to the parent
-const emit = defineEmits(["propertyStatusSubmitted"]);
+const emit = defineEmits(["propertyStatusSubmitted", "propertyInfoStep"]);
 
 const submitPropertyStatus = () => {
   emit("propertyStatusSubmitted", propertyStatus.value);
+};
+
+const backToPropertyInfoStep = () => {
+  console.log("back button pressed");
+  emit("propertyInfoStep");
 };
 </script>
 
