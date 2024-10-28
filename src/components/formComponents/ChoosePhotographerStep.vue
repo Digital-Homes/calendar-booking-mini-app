@@ -101,6 +101,13 @@
       <!-- Step 2: Display Selected Photographer and Available Time Slots -->
       <div v-if="bookingData.selectedPhotographer">
         <div
+          v-if="fetchingAvailability"
+          class="flex flex-col items-center justify-center min-h-screen"
+        >
+          <div class="spinner"></div>
+          <h2 class="font-['DM_Sans']">Fetching Availability</h2>
+        </div>
+        <div
           class="flex items-center justify-between p-4 bg-pink-50 border-2 border-pink-300 rounded-lg shadow-sm"
         >
           <div class="flex items-center">
@@ -252,6 +259,7 @@ const props = defineProps({
 
 const photographers = ref([]);
 const loading = ref(true);
+const fetchingAvailability = ref(false);
 const bookingData = reactive({
   selectedPhotographer: null,
   selectedPhotographerName: "",
@@ -642,6 +650,7 @@ const refreshAccessToken = async (refreshToken) => {
 
 // Function to handle photographer selection and fetch available slots for booking
 const handlePhotographerSelected = async (selectedPhotographer) => {
+  fetchingAvailability.value = true;
   const { email, id, name } = selectedPhotographer;
   try {
     // Fetch the access token from the photographer's table in Airtable using the selected photographer's email
@@ -696,6 +705,7 @@ const handlePhotographerSelected = async (selectedPhotographer) => {
     // Fetch the calendar availability using the access token
     const busyTimes = await fetchCalendarAvailability(accessToken);
     const photographerSchedule = await fetchPhotographerSchedule(id);
+    fetchingAvailability.value = false;
 
     // Generate available slots based on busy times
     const availableSlots = await generateAvailableTimeSlots(
