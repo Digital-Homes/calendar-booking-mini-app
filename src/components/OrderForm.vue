@@ -66,7 +66,7 @@
       "
       :category="selectedCategory"
       :squareFootage="propertyInfo.squareFootage"
-      @goBackToCategories="handleGoBackToCategories"
+      @categoryStep="handleGoBackToCategories"
       @updateCart="handleCartUpdate"
     />
 
@@ -135,13 +135,27 @@
 
     <!-- Next button after add-ons/products -->
     <div
-      v-if="showNextButton && !addOnSelectionStep"
+      v-if="
+        showNextButton &&
+        !addOnSelectionStep &&
+        categorySelectionSubmitted &&
+        cart.items !== [] &&
+        totalPrice > 0
+      "
       class="max-w-[1050px] ml-auto mx-auto font-['DM_Sans'] flex flex-col items-center justify-center"
     >
       <div
         v-if="totalItems > 0 && !showThankYouScreen"
         class="w-full ml-auto mx-auto font-['DM_Sans'] flex flex-row justify-between items-center mt-5"
       >
+        <div class="flex-none font-['DM_Sans'] mr-auto">
+          <FormKit
+            type="button"
+            label="Prev Step"
+            @click="handleGoBackToCategories"
+            class="mt-4 text-white py-2 px-4 rounded"
+          />
+        </div>
         <h3 class="text-center flex-1">Total: ${{ totalPrice.toFixed(2) }}</h3>
         <div class="flex-none font-['DM_Sans'] ml-auto">
           <FormKit
@@ -312,6 +326,7 @@ const handleGoBackToCategories = () => {
   // Reset the state for category selection
   categorySelectionSubmitted.value = false;
   selectedCategory.value = "";
+  cart.value.totalPrice = 0;
   // You can also reset any other states if necessary
 };
 

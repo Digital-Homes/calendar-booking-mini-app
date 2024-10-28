@@ -88,16 +88,29 @@
           </div>
         </label>
       </div>
+
+      <div
+        class="flex justify-between items-center w-full mt-4"
+        v-if="cart.length == 0"
+      >
+        <div>
+          <!-- 'Prev Step' button aligned to the left -->
+          <FormKit
+            type="button"
+            label="Prev Step"
+            @click="backToCategories"
+            class="mr-auto"
+          />
+        </div>
+        <h3 class="text-center flex-1">Total: $0</h3>
+        <div>
+          <!-- 'Next Step' button aligned to the right -->
+          <FormKit type="submit" label="Next Step" class="ml-auto" />
+        </div>
+      </div>
     </div>
 
     <div v-if="!isLoading && airtableData.length === 0">No products found.</div>
-    <!-- <div class="mt-5 mx-auto flex flex-col items-start max-w-[1050px]">
-      <FormKit
-        type="button"
-        label="Back to Categories"
-        @click="$emit('goBackToCategories')"
-      />
-    </div> -->
   </div>
 </template>
 
@@ -120,7 +133,11 @@ const isLoading = ref(false);
 const cart = ref([]);
 const selectedProduct = ref(null); // Track selected product
 
-const emit = defineEmits(["updateCart"]);
+const emit = defineEmits(["updateCart", "categoryStep"]);
+
+const backToCategories = () => {
+  emit("categoryStep");
+};
 
 const fetchDataFromAirtable = async () => {
   isLoading.value = true; // Show the loader while data is being fetched
@@ -132,7 +149,7 @@ const fetchDataFromAirtable = async () => {
           Authorization: `Bearer ${airtableToken}`,
         },
         params: {
-          filterByFormula: `FIND('${props.category}', {Type})`,
+          filterByFormula: `AND(FIND('${props.category}', {Type}), {Status} = 'Active')`,
         },
       }
     );
