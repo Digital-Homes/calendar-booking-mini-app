@@ -49,6 +49,7 @@
     <!-- Category selection step (for both services) -->
     <CategorySelectionStep
       v-if="propertyStatusSubmitted && !categorySelectionSubmitted"
+      @propertyStatusStep="handleBackToPropertyStatusStep"
       @categorySelected="handleCategorySelected"
       class="max-w-[768px] mx-auto"
     />
@@ -295,21 +296,23 @@ const handlePropertyStatusSubmitted = (propertyStatus) => {
 };
 
 // go back to property status step
+const handleBackToPropertyStatusStep = () => {
+  propertyStatusSubmitted.value = false;
+  userPropertyStatus.value = [];
+};
 
+// proceed to product step
 const handleCategorySelected = (category) => {
-  selectedCategory.value = category; // Add this line to store the selected category
+  selectedCategory.value = category;
   categorySelectionSubmitted.value = true;
 };
 
+// go back to category selection step
 const handleGoBackToCategories = () => {
   // Reset the state for category selection
   categorySelectionSubmitted.value = false;
   selectedCategory.value = "";
   // You can also reset any other states if necessary
-};
-
-const handleProceedToCheckout = () => {
-  showCheckoutComponent.value = true;
 };
 
 const handleNext = () => {
@@ -321,39 +324,8 @@ const handleNext = () => {
   }
 };
 
-const totalPrice = computed(() => {
-  return cart.value.totalPrice; // Calculate total price based on items in cart
-});
-const totalItems = computed(() => cart.value.items.length);
-const totalDuration = computed(() => {
-  return cart.value.totalDuration;
-});
-
-const hasAddOns = computed(() => {
-  const hasAddOnsValue = cart.value.items.some(
-    (product) =>
-      product.fields["Add-ons"] && product.fields["Add-ons"].length > 0
-  );
-  return hasAddOnsValue;
-});
-
-const handleCartUpdate = (updatedCartItems) => {
-  cart.value.items = updatedCartItems; // Set the new items from the updated cart
-  cart.value.totalPrice = updatedCartItems.reduce((total, item) => {
-    const price = item.selectedVariant
-      ? parseFloat(item.selectedVariant.price)
-      : parseFloat(item.fields.Price);
-    return total + (!isNaN(price) ? price : 0);
-  }, 0);
-  cart.value.totalDuration = updatedCartItems.reduce((total, item) => {
-    const time = item.selectedVariant
-      ? parseFloat(item.selectedVariant.duration)
-      : parseFloat(item.fields.Duration);
-    return total + (!isNaN(time) ? time : 0);
-  }, 0);
-
-  selectedProducts.value = updatedCartItems;
-  showNextButton.value = true;
+const handleProceedToCheckout = () => {
+  showCheckoutComponent.value = true;
 };
 
 const handleAddOnToCart = (addOn) => {
@@ -391,6 +363,41 @@ const handlePlaceOrder = () => {
 const handlePaymentMade = () => {
   showPaymentForm.value = false;
   placeOrder();
+};
+
+const totalPrice = computed(() => {
+  return cart.value.totalPrice; // Calculate total price based on items in cart
+});
+const totalItems = computed(() => cart.value.items.length);
+const totalDuration = computed(() => {
+  return cart.value.totalDuration;
+});
+
+const hasAddOns = computed(() => {
+  const hasAddOnsValue = cart.value.items.some(
+    (product) =>
+      product.fields["Add-ons"] && product.fields["Add-ons"].length > 0
+  );
+  return hasAddOnsValue;
+});
+
+const handleCartUpdate = (updatedCartItems) => {
+  cart.value.items = updatedCartItems; // Set the new items from the updated cart
+  cart.value.totalPrice = updatedCartItems.reduce((total, item) => {
+    const price = item.selectedVariant
+      ? parseFloat(item.selectedVariant.price)
+      : parseFloat(item.fields.Price);
+    return total + (!isNaN(price) ? price : 0);
+  }, 0);
+  cart.value.totalDuration = updatedCartItems.reduce((total, item) => {
+    const time = item.selectedVariant
+      ? parseFloat(item.selectedVariant.duration)
+      : parseFloat(item.fields.Duration);
+    return total + (!isNaN(time) ? time : 0);
+  }, 0);
+
+  selectedProducts.value = updatedCartItems;
+  showNextButton.value = true;
 };
 
 const placeOrder = async () => {

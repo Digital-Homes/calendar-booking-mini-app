@@ -8,10 +8,11 @@
     <div class="flex space-x-8">
       <!-- Appointment Service Card -->
       <div
-        @click="selectCategory(category.name)"
+        @click="selectedCategory(category.name)"
         class="service-card cursor-pointer flex flex-col items-center justify-center border border-gray-300 rounded-lg shadow-lg transition-transform transform hover:scale-105"
         v-for="category in categories"
         :key="category.name"
+        :class="{ 'selected-category': isSelected(category) }"
       >
         <img
           :src="category.image"
@@ -21,28 +22,34 @@
         <h2 class="text-m font-normal font-['DM_Sans']">{{ category.name }}</h2>
       </div>
     </div>
-    <!-- <div class="category-cards">
-      <div
-        class="category-card"
-        v-for="category in categories"
-        :key="category.name"
-        @click="selectCategory(category.name)"
-      >
-        <img
-          :src="category.image"
-          alt="Category image"
-          class="category-image"
+    <div class="flex justify-between items-center w-full mt-4">
+      <!-- Prev Step button aligned to the left -->
+      <div>
+        <FormKit
+          type="button"
+          label="Prev Step"
+          @click="backToPropertyStatusStep"
+          class="mr-auto"
         />
-        <h2>{{ category.name }}</h2>
       </div>
-    </div> -->
+      <div>
+        <!-- Next Step button aligned to the right -->
+        <FormKit
+          type="button"
+          label="Next Step"
+          @click="handleCategorySelected"
+          class="ml-auto"
+        />
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, defineEmits } from "vue";
+const selectedServiceCategory = ref("");
 
-const emit = defineEmits(["categorySelected"]);
+const emit = defineEmits(["categorySelected", "propertyStatusStep"]);
 
 // Define categories as a ref
 const categories = ref([
@@ -63,9 +70,21 @@ const categories = ref([
   },
 ]);
 
+const isSelected = (record) => {
+  return selectedServiceCategory.value === record.name;
+};
+
 // Function to select a category
-const selectCategory = (categoryName) => {
-  emit("categorySelected", categoryName);
+const selectedCategory = (categoryName) => {
+  selectedServiceCategory.value = categoryName;
+};
+
+const backToPropertyStatusStep = () => {
+  emit("propertyStatusStep");
+};
+
+const handleCategorySelected = () => {
+  emit("categorySelected", selectedServiceCategory.value);
 };
 </script>
 
@@ -81,5 +100,8 @@ const selectCategory = (categoryName) => {
   flex-direction: column; /* Stack items vertically */
   align-items: center; /* Center items horizontally */
   justify-content: center; /* Center items vertically */
+}
+.selected-category {
+  border-color: #ff33cc; /* Border color for selected card */
 }
 </style>
