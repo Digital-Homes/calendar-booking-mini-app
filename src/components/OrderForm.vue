@@ -5,23 +5,6 @@
       alt="Digital Homes logo"
       class="w-60 mx-auto mb-8"
     />
-    <!-- Next button after choosing slot -->
-    <!-- <FormKit
-      type="submit"
-      v-if="canProceedToNextStep && userInfo.id == ''"
-      @click="nextStep"
-      label="Proceed to Paymenttt"
-      :disabled="!canProceedToNextStep"
-      class="formkit-button next-button"
-    />
-
-    <FormKit
-      type="submit"
-      v-if="proceedToCheckout && userInfo.id !== '' && !showThankYouScreen"
-      @click="placeOrder"
-      label="Place Order"
-      class="formkit-button next-button"
-    /> -->
 
     <!-- Service selection step -->
     <FormSelectionStep
@@ -34,6 +17,7 @@
     <EmailStep
       v-if="serviceSelected && !stepCompleted"
       @emailChecked="handleEmailChecked"
+      @formStep="handleBackToFormStep"
       class="max-w-[768px] mx-auto"
     />
 
@@ -47,14 +31,6 @@
       @propertyInfoSubmitted="handlePropertyInfoSubmitted"
       class="max-w-[768px] mx-auto"
     />
-
-    <!-- Editing style step (shown only if service is editing) -->
-    <!-- <EditingStyleStep
-      v-if="
-        serviceSelected === 'editing' && stepCompleted && !editingStyleSubmitted
-      "
-      @styleSelected="handleEditingStyleSelected"
-    /> -->
 
     <!-- Property status step (for appointment service) -->
     <PropertyStatusStep
@@ -244,16 +220,23 @@ const showPaymentForm = ref(false);
 
 const emit = defineEmits(["updateCart"]);
 
+// handle form selected
+const handleServiceSelected = (service) => {
+  serviceSelected.value = service;
+  stepCompleted.value = false; // Reset to show the email step
+};
+
+// go back to form selection step
+const handleBackToFormStep = () => {
+  serviceSelected.value = null;
+};
+
+// proceed to property info step
 const handleEmailChecked = (data) => {
   userInfo.value.email = data.email;
   userInfo.value.name = data.name;
   userInfo.value.id = data.id;
   stepCompleted.value = true;
-};
-
-const handleServiceSelected = (service) => {
-  serviceSelected.value = service;
-  stepCompleted.value = false; // Reset to show the email step
 };
 
 const handlePropertyInfoSubmitted = (info) => {

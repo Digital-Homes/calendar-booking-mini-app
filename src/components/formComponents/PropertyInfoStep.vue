@@ -98,6 +98,7 @@ const fetchLocationSuggestions = async () => {
 };
 
 const selectLocation = async (suggestion) => {
+  locationSelected.value = true;
   try {
     const { fullAddress, zipcode } = await fetchPlaceDetails(
       suggestion.placeId
@@ -107,13 +108,13 @@ const selectLocation = async (suggestion) => {
       propertyInfo.value.location = fullAddress;
       propertyInfo.value.zipcode = zipcode;
 
-      // Set location as selected
-      locationSelected.value = true;
+      // // Set location as selected
+      // locationSelected.value = true;
 
-      // Force clear suggestions after selection
+      // // Force clear suggestions after selection
       setTimeout(() => {
         locationSuggestions.value.length = 0; // Clear suggestions array completely
-      }, 100);
+      }, 10);
     }
   } catch (error) {
     console.error("Error fetching place details:", error);

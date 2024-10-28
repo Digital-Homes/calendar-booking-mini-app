@@ -6,14 +6,24 @@
     </p>
     <form @submit.prevent="checkEmail">
       <FormKit type="email" v-model="email" label="Email" required />
-      <div class="flex items-center justify-between mb-4">
-        <!-- <div>
-          <FormKit type="submit" label="← Back" />
-        </div> -->
-        <div class="ml-auto">
-          <FormKit type="submit" label="Next Step" />
+
+      <!-- Flex container for buttons with space between -->
+      <div class="flex justify-between items-center w-full mt-4">
+        <div>
+          <!-- 'Prev Step' button aligned to the left -->
+          <FormKit
+            type="button"
+            label="Prev Step"
+            @click="backToFormStep"
+            class="mr-auto"
+          />
+        </div>
+        <div>
+          <!-- 'Next Step' button aligned to the right -->
+          <FormKit type="submit" label="Next Step" class="ml-auto" />
         </div>
       </div>
+
       <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
     </form>
   </div>
@@ -55,6 +65,10 @@ const checkEmail = async () => {
     errorMessage.value =
       "There was an error checking your email. Please try again later.";
   }
+};
+
+const backToFormStep = () => {
+  emit("formStep");
 };
 
 onMounted(() => {
