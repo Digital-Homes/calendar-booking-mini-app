@@ -42,13 +42,20 @@
         label="Do you have any specific notes or requests about this property?"
         class="font-['DM_Sans']"
       />
-      <div class="flex flex-col items-end justify-end ml-auto">
-        <!-- Flex container to align items to the right -->
-        <FormKit
-          type="submit"
-          label="Next Step"
-          :classes="{ base: 'submit-button' }"
-        />
+      <div class="flex justify-between items-center w-full mt-4">
+        <!-- Prev Step button aligned to the left -->
+        <div>
+          <FormKit
+            type="button"
+            label="Prev Step"
+            @click="backToEmailStep"
+            class="mr-auto"
+          />
+        </div>
+        <div>
+          <!-- Next Step button aligned to the right -->
+          <FormKit type="submit" label="Next Step" class="ml-auto" />
+        </div>
       </div>
     </form>
   </div>
@@ -73,12 +80,12 @@ const locationSelected = ref(false);
 const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
 
 const fetchLocationSuggestions = async () => {
-  locationSelected.value = false;
   if (propertyInfo.value.location.length < 3) {
     locationSuggestions.value = [];
     return;
   }
   try {
+    locationSelected.value = false;
     const response = await axios.get(
       `https://cors-anywhere.herokuapp.com/https://maps.googleapis.com/maps/api/place/autocomplete/json`,
       {
@@ -107,9 +114,6 @@ const selectLocation = async (suggestion) => {
     if (fullAddress) {
       propertyInfo.value.location = fullAddress;
       propertyInfo.value.zipcode = zipcode;
-
-      // // Set location as selected
-      // locationSelected.value = true;
 
       // // Force clear suggestions after selection
       setTimeout(() => {
@@ -140,8 +144,6 @@ const fetchPlaceDetails = async (placeId) => {
 
     // Extract ZIP code from address components
     const zipcode = extractZipCodeFromComponents(result.address_components);
-
-    console.log("Formatted Address:", formattedAddress); // Debugging output
     return { fullAddress: formattedAddress, zipcode }; // Return both formatted address and ZIP code
   } catch (error) {
     console.error("Error fetching place details:", error);
@@ -155,6 +157,10 @@ const extractZipCodeFromComponents = (components) => {
     component.types.includes("postal_code")
   );
   return zipCodeComponent ? zipCodeComponent.long_name : ""; // Return the ZIP code or an empty string if not found
+};
+
+const backToEmailStep = () => {
+  emit("emailStep");
 };
 
 const submitPropertyInfo = () => {

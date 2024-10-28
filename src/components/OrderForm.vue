@@ -29,6 +29,7 @@
         !propertyInfoSubmitted
       "
       @propertyInfoSubmitted="handlePropertyInfoSubmitted"
+      @emailStep="handleBackToEmailStep"
       class="max-w-[768px] mx-auto"
     />
 
@@ -239,6 +240,12 @@ const handleEmailChecked = (data) => {
   stepCompleted.value = true;
 };
 
+//go back to email step
+const handleBackToEmailStep = () => {
+  stepCompleted.value = false;
+};
+
+// proceed to property status step
 const handlePropertyInfoSubmitted = (info) => {
   propertyInfo.value = {
     location: info.location,
@@ -249,6 +256,9 @@ const handlePropertyInfoSubmitted = (info) => {
   propertyInfoSubmitted.value = true;
 };
 
+// go back to property info step
+
+// proceed to category selection
 const handlePropertyStatusSubmitted = (propertyStatus) => {
   // Handle the property status here
   if (propertyStatus.ownerOccupied === true) {
