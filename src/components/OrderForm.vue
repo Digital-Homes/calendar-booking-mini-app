@@ -204,7 +204,13 @@ import PaymentForm from "./formComponents/PaymentForm.vue";
 import VirtualEditing from "./formComponents/VirtualEditing.vue";
 
 const stepCompleted = ref(false);
-const userInfo = ref({ email: "", name: "", id: "", stripePaymentId: "" });
+const userInfo = ref({
+  email: "",
+  name: "",
+  id: "",
+  stripePaymentId: "",
+  company: "",
+});
 const serviceSelected = ref(null);
 const propertyInfo = ref({
   location: "",
@@ -259,6 +265,8 @@ const handleEmailChecked = (data) => {
   userInfo.value.name = data.name;
   userInfo.value.id = data.id;
   userInfo.value.stripePaymentId = data.paymentId;
+  userInfo.value.company = data.company;
+  console.log(userInfo);
   stepCompleted.value = true;
 };
 
@@ -374,8 +382,11 @@ const nextStep = () => {
 const handlePlaceOrder = () => {
   showChoosePhotographerStep.value = false;
   // if user exists and payment method exists
-  if (userInfo.value.id !== "" && userinfo.value.paymentId !== "") {
-    placeOrder();
+  if (userInfo.value.id !== "" && userInfo.value.paymentId !== "") {
+    placeOrder().then(() => {
+      // Redirect after the order is placed
+      window.location.href = "https://digitalhomesclientportal.noloco.co/home"; // Replace with your target URL
+    });
   } else {
     showPaymentForm.value = true;
   }

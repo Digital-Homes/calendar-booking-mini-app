@@ -54,12 +54,14 @@ const checkEmail = async () => {
     const records = response.data.records;
     const userName = records.length > 0 ? records[0].fields["Full Name"] : "";
     const userId = records.length > 0 ? records[0].id : "";
+    const company = records.length > 0 ? records[0].fields["Company"] : "";
     const stripePaymentMethodID =
-      records.length > 0 ? records[0].fields["Stripe Payment Method"] : "";
+      records.length > 0 ? records[0].fields["Stripe Payment Method ID"] : "";
     emit("emailChecked", {
       email: email.value,
       name: userName,
       id: userId,
+      company: company,
       paymentId: stripePaymentMethodID,
     });
   } catch (error) {
