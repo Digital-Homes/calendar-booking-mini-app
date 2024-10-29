@@ -5,18 +5,18 @@
         <!-- Define radio options with options prop -->
         <FormKit
           type="radio"
-          v-model="paymentStatus"
+          v-model="paymentMethod"
           name="paymentOption"
           :options="[
             {
               label:
                 'I am paying by credit card / debit card. (You will receive payment form via email)',
-              value: 'card',
+              value: 'Credit/debit card',
             },
             {
               label:
                 'My company is paying for the services. (Must be in touch with company prior to shoot)',
-              value: 'company',
+              value: 'Company',
             },
           ]"
         />
@@ -24,7 +24,7 @@
     </div>
 
     <!-- Form Fields in Two Columns -->
-    <div class="form-grid font-['DM_Sans']" v-if="paymentStatus === 'card'">
+    <div class="form-grid font-['DM_Sans']" v-if="paymentMethod !== ''">
       <!-- Column 1 -->
       <div>
         <FormKit
@@ -125,9 +125,9 @@ const props = defineProps({
   },
 });
 
-const paymentStatus = ref("");
+const paymentMethod = ref("");
 
-const emit = defineEmits(["paymentDone"]);
+const emit = defineEmits(["paymentDone", "paymentMethod"]);
 
 const months = [
   { label: "January", value: "01" },
@@ -151,7 +151,7 @@ const years = Array.from({ length: 10 }, (_, i) => {
 
 const handlePayment = () => {
   emit("paymentDone", true);
-  emit("paymentStatus", paymentStatus.value);
+  emit("paymentMethod", paymentMethod.value);
 };
 </script>
 

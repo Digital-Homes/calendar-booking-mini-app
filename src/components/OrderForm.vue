@@ -108,6 +108,7 @@
       v-if="showPaymentForm"
       :total="cart.totalPrice"
       class="max-w-[768px] mx-auto"
+      @paymentMethod="storePaymentMethod"
       @paymentDone="handlePaymentMade"
     />
 
@@ -245,6 +246,7 @@ const selectedVariantIDs = [];
 const selectedAddonIDs = [];
 const showCheckoutComponent = ref(false);
 const showPaymentForm = ref(false);
+const agentPaymentMethod = ref("");
 
 const emit = defineEmits(["updateCart"]);
 
@@ -392,9 +394,15 @@ const handlePlaceOrder = () => {
   }
 };
 
+const storePaymentMethod = (method) => {
+  agentPaymentMethod.value = method;
+  console.log(agentPaymentMethod);
+};
+
 const handlePaymentMade = () => {
   showPaymentForm.value = false;
-  placeOrder();
+
+  // placeOrder();
 };
 
 const totalPrice = computed(() => {
@@ -504,7 +512,7 @@ const placeOrder = async () => {
         const customerId = customerResponse.data.id;
         userInfo.value.id = customerId; // Save the customer record ID
 
-        // Placeholder: Create a new order with the newly created customer ID
+        //Create a new order with the newly created customer ID
         const orderResponse = await axios.post(
           `https://api.airtable.com/v0/${airtableBase}/${ordersTable}`,
           {
@@ -565,6 +573,7 @@ const placeOrder = async () => {
             ],
             ["Order Total"]: cart.value.totalPrice,
             ["Order Status"]: "New Order",
+            ["Responsible Billing Party"]: agentPaymentMethod.value,
           },
         },
         {
