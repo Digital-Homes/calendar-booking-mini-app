@@ -71,7 +71,12 @@
     />
 
     <AddOnSelection
-      v-if="addOnSelectionStep && !showChoosePhotographerStep"
+      v-if="
+        addOnSelectionStep &&
+        !showChoosePhotographerStep &&
+        !showThankYouScreen &&
+        !showCheckoutComponent
+      "
       @goBack="addOnSelectionStep = false"
       @next="showChoosePhotographerStep = true"
       :selectedProducts="selectedProducts"
@@ -199,7 +204,7 @@ import PaymentForm from "./formComponents/PaymentForm.vue";
 import VirtualEditing from "./formComponents/VirtualEditing.vue";
 
 const stepCompleted = ref(false);
-const userInfo = ref({ email: "", name: "", id: "" });
+const userInfo = ref({ email: "", name: "", id: "", stripePaymentId: "" });
 const serviceSelected = ref(null);
 const propertyInfo = ref({
   location: "",
@@ -253,6 +258,7 @@ const handleEmailChecked = (data) => {
   userInfo.value.email = data.email;
   userInfo.value.name = data.name;
   userInfo.value.id = data.id;
+  userInfo.value.stripePaymentId = data.paymentId;
   stepCompleted.value = true;
 };
 
@@ -277,7 +283,6 @@ const handlePropertyInfoSubmitted = (info) => {
 
 // go back to property info step
 const handleBackToPropertyInfoStep = () => {
-  console.log("back to property info");
   propertyInfoSubmitted.value = false;
   propertyInfo.value.location = "";
   propertyInfo.value.squareFootage = 0;
@@ -368,7 +373,8 @@ const nextStep = () => {
 
 const handlePlaceOrder = () => {
   showChoosePhotographerStep.value = false;
-  if (userInfo.value.id !== "") {
+  // if user exists and payment method exists
+  if (userInfo.value.id !== "" && userinfo.value.paymentId !== "") {
     placeOrder();
   } else {
     showPaymentForm.value = true;

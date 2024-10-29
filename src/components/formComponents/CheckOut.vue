@@ -49,9 +49,20 @@
       <span class="text-[#eb36c5]">${{ props.total }}</span>
     </div>
 
-    <div class="buttons">
-      <button class="prev-button">Prev Step</button>
-      <button @click="handleCheckout" class="checkout-button">Checkout</button>
+    <div class="flex justify-between items-center w-full mt-4">
+      <!-- Prev Step button aligned to the left -->
+      <div>
+        <FormKit type="button" label="Prev Step" class="mr-auto" />
+      </div>
+      <div>
+        <!-- Next Step button aligned to the right -->
+        <FormKit
+          type="button"
+          label="Checkout"
+          @click="handleCheckout"
+          class="ml-auto"
+        />
+      </div>
     </div>
   </div>
 </template>

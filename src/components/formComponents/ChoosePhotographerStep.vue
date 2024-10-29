@@ -98,15 +98,16 @@
         </FormKit>
       </div>
 
+      <div
+        v-if="fetchingAvailability"
+        class="flex flex-col items-center justify-center min-h-screen"
+      >
+        <div class="spinner"></div>
+        <h2 class="font-['DM_Sans']">Fetching Availability</h2>
+      </div>
+
       <!-- Step 2: Display Selected Photographer and Available Time Slots -->
-      <div v-if="bookingData.selectedPhotographer">
-        <div
-          v-if="fetchingAvailability"
-          class="flex flex-col items-center justify-center min-h-screen"
-        >
-          <div class="spinner"></div>
-          <h2 class="font-['DM_Sans']">Fetching Availability</h2>
-        </div>
+      <div v-if="bookingData.selectedPhotographer && !fetchingAvailability">
         <div
           class="flex items-center justify-between p-4 bg-pink-50 border-2 border-pink-300 rounded-lg shadow-sm"
         >

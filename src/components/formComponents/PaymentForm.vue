@@ -1,7 +1,30 @@
 <template>
   <div>
+    <div>
+      <form class="font-['DM_Sans']">
+        <!-- Define radio options with options prop -->
+        <FormKit
+          type="radio"
+          v-model="paymentStatus"
+          name="paymentOption"
+          :options="[
+            {
+              label:
+                'I am paying by credit card / debit card. (You will receive payment form via email)',
+              value: 'card',
+            },
+            {
+              label:
+                'My company is paying for the services. (Must be in touch with company prior to shoot)',
+              value: 'company',
+            },
+          ]"
+        />
+      </form>
+    </div>
+
     <!-- Form Fields in Two Columns -->
-    <div class="form-grid font-['DM_Sans']">
+    <div class="form-grid font-['DM_Sans']" v-if="paymentStatus === 'card'">
       <!-- Column 1 -->
       <div>
         <FormKit
@@ -68,21 +91,27 @@
           :options="years"
         />
       </div>
-    </div>
-
-    <!-- Terms and Conditions -->
-    <div class="terms-section">
-      <FormKit
-        type="checkbox"
-        name="terms"
-        label="I agree to the terms and conditions"
-      />
+      <!-- Terms and Conditions -->
+      <div class="terms-section">
+        <FormKit
+          type="checkbox"
+          name="terms"
+          label="I agree to the terms and conditions"
+        />
+      </div>
     </div>
 
     <!-- Total and Pay Now button -->
     <div class="total-pay-section">
-      <span class="">Total: ${{ props.total }}</span>
-      <button class="pay-now-button" @click="handlePayment">Pay Now</button>
+      <span>Total: ${{ props.total }}</span>
+      <div>
+        <FormKit
+          type="button"
+          label="Pay Now"
+          @click="handlePayment"
+          class="ml-auto"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -95,6 +124,8 @@ const props = defineProps({
     type: Number,
   },
 });
+
+const paymentStatus = ref("");
 
 const emit = defineEmits(["paymentDone"]);
 
@@ -120,6 +151,7 @@ const years = Array.from({ length: 10 }, (_, i) => {
 
 const handlePayment = () => {
   emit("paymentDone", true);
+  emit("paymentStatus", paymentStatus.value);
 };
 </script>
 
@@ -168,5 +200,3 @@ const handlePayment = () => {
   border-radius: 50px;
 }
 </style>
-
-<script setup></script>

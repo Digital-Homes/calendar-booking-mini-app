@@ -53,11 +53,14 @@ const checkEmail = async () => {
     );
     const records = response.data.records;
     const userName = records.length > 0 ? records[0].fields["Full Name"] : "";
-    const userId = records.length > 0 ? response.data.records[0].id : "";
+    const userId = records.length > 0 ? records[0].id : "";
+    const stripePaymentMethodID =
+      records.length > 0 ? records[0].fields["Stripe Payment Method"] : "";
     emit("emailChecked", {
       email: email.value,
       name: userName,
       id: userId,
+      paymentId: stripePaymentMethodID,
     });
   } catch (error) {
     console.error("Error checking email in Airtable:", error);
