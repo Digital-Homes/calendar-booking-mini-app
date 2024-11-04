@@ -112,7 +112,13 @@
       @paymentDone="handlePaymentMade"
     />
 
-    <VirtualEditing
+    <!-- <VirtualEditing
+      v-if="serviceSelected === 'editing' && stepCompleted"
+      class="max-w-[768px] mx-auto"
+      :userid="userInfo.id"
+    /> -->
+
+    <VirtualOrder
       v-if="serviceSelected === 'editing' && stepCompleted"
       class="max-w-[768px] mx-auto"
       :userid="userInfo.id"
@@ -203,6 +209,7 @@ import ChoosePhotographerStep from "./formComponents/ChoosePhotographerStep.vue"
 import CheckOut from "./formComponents/CheckOut.vue";
 import PaymentForm from "./formComponents/PaymentForm.vue";
 import VirtualEditing from "./formComponents/VirtualEditing.vue";
+import VirtualOrder from "./formComponents/VirtualOrder.vue";
 
 const stepCompleted = ref(false);
 const userInfo = ref({

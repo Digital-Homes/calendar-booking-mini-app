@@ -8,6 +8,7 @@ import BookingForm from "./components/BookingForm.vue";
 import Products from "./components/Products.vue";
 import OrderForm from "./components/OrderForm.vue";
 import SelectZipCodes from "./components/SelectZipCodes.vue";
+// import VirtualOrder from "./components/VirtualOrder.vue";
 
 const routes = [
   { path: "/authenticate", component: Authenticate },
@@ -15,6 +16,7 @@ const routes = [
   // { path: "/products", component: Products },
   { path: "/", component: OrderForm },
   { path: "/zipcodes", component: SelectZipCodes },
+  // { path: "/virtual", component: VirtualOrder },
 ];
 
 const router = createRouter({
