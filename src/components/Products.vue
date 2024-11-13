@@ -281,7 +281,7 @@ const fetchLocationSuggestions = async () => {
   }
   try {
     const response = await axios.get(
-      `https://cors-anywhere.herokuapp.com/https://maps.googleapis.com/maps/api/place/autocomplete/json`,
+      `https://maps.googleapis.com/maps/api/place/autocomplete/json`,
       {
         params: {
           input: propertyInfo.value.location,

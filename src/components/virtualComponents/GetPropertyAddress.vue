@@ -63,7 +63,7 @@ const fetchLocationSuggestions = async () => {
   try {
     locationSelected.value = false;
     const response = await axios.get(
-      `https://cors-anywhere.herokuapp.com/https://maps.googleapis.com/maps/api/place/autocomplete/json`,
+      `https://maps.googleapis.com/maps/api/place/autocomplete/json`,
       {
         params: {
           input: propertyInfo.value.location,
@@ -104,7 +104,7 @@ const selectLocation = async (suggestion) => {
 const fetchPlaceDetails = async (placeId) => {
   try {
     const response = await axios.get(
-      `https://cors-anywhere.herokuapp.com/https://maps.googleapis.com/maps/api/place/details/json`,
+      `https://maps.googleapis.com/maps/api/place/details/json`,
       {
         params: {
           place_id: placeId,
