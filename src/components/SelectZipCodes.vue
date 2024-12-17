@@ -6,12 +6,6 @@
       type="text/css"
     />
 
-    <img
-      src="/digitalhomes.svg"
-      alt="Digital Homes logo"
-      class="w-60 mx-auto mb-8"
-    />
-
     <h2 class="mb-4">Click the map to draw a polygon.</h2>
     <!-- Message while calculating ZIP codes -->
     <span v-if="isCalculating">
