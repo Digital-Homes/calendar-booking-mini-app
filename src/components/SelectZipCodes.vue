@@ -15,6 +15,13 @@
     <h2 v-if="calculatedZipCodes.length > 0" class="mb-4">
       Service Zipcodes: {{ calculatedZipCodes }}
     </h2>
+    <button
+      v-if="polygonExists"
+      @click="clearPolygon"
+      class="px-4 py-2 mb-4 bg-blue-500 text-white rounded"
+    >
+      Draw New Polygon
+    </button>
     <div id="map" class="map-container"></div>
   </div>
 </template>
@@ -32,14 +39,15 @@ const mapboxToken = import.meta.env.VITE_MAPBOX_TOKEN; // Use your Mapbox access
 // Airtable API config
 const airtableApiKey = import.meta.env.VITE_AIRTABLE_TOKEN;
 const airtableBaseId = import.meta.env.VITE_AIRTABLE_BASE_ID;
-const airtableTableName = import.meta.env.VITE_PHOTOGRAPHER_TABLE_ID; //photographers table
+const airtableTableName = import.meta.env.VITE_PHOTOGRAPHER_TABLE_ID; // Photographers table
 
 // Retrieve the record ID from URL
 const recordId = new URLSearchParams(window.location.search).get("recordId");
 
-// Ref for the Mapbox map and zip code display
+// Refs for the Mapbox map, zip code display, and polygon control
 const map = ref(null);
 const calculatedZipCodes = ref("");
+const polygonExists = ref(false); // Track if a polygon is present
 let draw; // Define draw as a regular variable
 const isCalculating = ref(false);
 
@@ -58,7 +66,7 @@ onMounted(() => {
     displayControlsDefault: false,
     controls: {
       polygon: true,
-      trash: true,
+      trash: false, // Disable trash control (manual clear with button)
     },
     defaultMode: "draw_polygon",
   });
@@ -66,29 +74,38 @@ onMounted(() => {
 
   // Listen for drawing events
   map.value.on("draw.create", handleDraw);
-  map.value.on("draw.delete", handleDraw);
-  map.value.on("draw.update", handleDraw);
+  map.value.on("draw.update", handlePolygonEdit);
 });
 
 // Function to handle drawing events
-const handleDraw = async (e) => {
-  const data = draw.getAll(); // Use the draw variable here
+const handleDraw = async () => {
+  if (polygonExists.value) return; // Prevent additional polygons from being drawn
+
+  const data = draw.getAll();
   if (data.features.length > 0) {
+    polygonExists.value = true; // Mark polygon as existing
     const polygonCoordinates = data.features[0].geometry.coordinates[0];
 
     // Generate points inside the polygon and get ZIP codes
     const zipCodes = await getZipCodesFromPolygon(polygonCoordinates);
-    calculatedZipCodes.value = zipCodes;
     calculatedZipCodes.value = zipCodes.join(", ");
 
     // Update the Airtable record with ZIP codes
     await updateAirtableRecord(recordId, calculatedZipCodes.value);
   } else {
     calculatedZipCodes.value = "";
-    if (e.type !== "draw.delete") {
-      alert("Click the map to draw a polygon.");
-    }
+    alert("Click the map to draw a polygon.");
   }
+};
+
+// Function to clear the polygon and allow drawing a new one
+const clearPolygon = () => {
+  draw.deleteAll(); // Remove all polygons from the map
+  polygonExists.value = false; // Reset polygon state
+  calculatedZipCodes.value = ""; // Clear ZIP code display
+
+  // Enable drawing a new polygon
+  draw.changeMode("draw_polygon");
 };
 
 // Function to generate points within the polygon using Turf.js and get ZIP codes
@@ -96,7 +113,8 @@ const getZipCodesFromPolygon = async (polygon) => {
   isCalculating.value = true;
   const points = getPointsInPolygon(polygon);
   const zipCodes = await reverseGeocodeZip(points);
-  return zipCodes;
+  isCalculating.value = false;
+  return [...new Set(zipCodes)]; // Return unique ZIP codes
 };
 
 // Function to generate points within the polygon using Turf.js
@@ -111,23 +129,19 @@ const getPointsInPolygon = (polygon) => {
   return pointsInPolygon.map((point) => point.geometry.coordinates); // Return [lon, lat] format
 };
 
+// Function to reverse geocode ZIP codes from points
 const reverseGeocodeZip = async (coordinates) => {
   const apiKey = import.meta.env.VITE_GEOCODE_API; // Use your Geocodio API key
   let zipCodesArray = [];
   for (const coord of coordinates) {
-    const lat = coord[1];
-    const lng = coord[0];
+    const [lng, lat] = coord;
 
     try {
       const response = await fetch(
-        `https://api.geocod.io/v1.7/reverse?api_key=${apiKey}&q=${lat},${lng}`,
-        {
-          method: "GET", // Use GET method for single coordinate lookup
-        }
+        `https://api.geocod.io/v1.7/reverse?api_key=${apiKey}&q=${lat},${lng}`
       );
 
       const data = await response.json();
-
       if (data.results && Array.isArray(data.results)) {
         data.results.forEach((result) => {
           if (result && result.address_components) {
@@ -139,9 +153,24 @@ const reverseGeocodeZip = async (coordinates) => {
       console.error("Error fetching ZIP codes:", error);
     }
   }
+  return zipCodesArray;
+};
 
-  isCalculating.value = false;
-  return [...new Set(zipCodesArray)]; // Return unique ZIP codes
+// Function to handle polygon edits and recalculate ZIP codes
+const handlePolygonEdit = async () => {
+  const data = draw.getAll();
+  if (data.features.length > 0) {
+    const polygonCoordinates = data.features[0].geometry.coordinates[0];
+
+    // Generate points inside the updated polygon and get ZIP codes
+    const zipCodes = await getZipCodesFromPolygon(polygonCoordinates);
+    calculatedZipCodes.value = zipCodes.join(", ");
+
+    // Update the Airtable record with the new ZIP codes
+    await updateAirtableRecord(recordId, calculatedZipCodes.value);
+  } else {
+    alert("Polygon no longer exists. Draw a new one.");
+  }
 };
 
 // Function to update Airtable record
@@ -153,7 +182,7 @@ const updateAirtableRecord = async (recordId, zipCodes) => {
       url,
       {
         fields: {
-          ["Service Zip Codes"]: zipCodes, // Update the 'zip_codes' field in Airtable
+          ["Service Zip Codes"]: zipCodes,
         },
       },
       {
@@ -174,16 +203,6 @@ const updateAirtableRecord = async (recordId, zipCodes) => {
   width: 100%;
   height: 500px;
 }
-.calculation-box {
-  height: 75px;
-  width: 150px;
-  position: absolute;
-  bottom: 40px;
-  left: 10px;
-  background-color: rgba(255, 255, 255, 0.9);
-  padding: 15px;
-  text-align: center;
-}
 .spinner {
   border: 4px solid rgba(0, 0, 0, 0.1);
   border-left-color: #000;
@@ -192,7 +211,9 @@ const updateAirtableRecord = async (recordId, zipCodes) => {
   height: 2rem;
   animation: spin 1s linear infinite;
 }
-
+button {
+  cursor: pointer;
+}
 @keyframes spin {
   0% {
     transform: rotate(0deg);
